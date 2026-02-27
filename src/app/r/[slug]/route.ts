@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UAParser } from "ua-parser-js";
 
 export async function GET(
     req: NextRequest,
@@ -13,7 +14,7 @@ export async function GET(
     }
 
     try {
-        // Direct Convex HTTP API — no package dependency, works in all runtimes
+        // Lookup the QR code by slug via Convex HTTP API
         const res = await fetch(`${convexUrl}/api/query`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -43,23 +44,57 @@ export async function GET(
                 ? destination
                 : `https://${destination}`;
 
-        // Fire-and-forget scan logging
+        // Fire-and-forget: log scan directly to Convex (no internal HTTP round-trip)
         const ua = req.headers.get("user-agent") ?? "";
         const ip =
             req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
             req.headers.get("x-real-ip") ??
             "unknown";
 
-        fetch(`${req.nextUrl.origin}/api/scan`, {
+        // Parse UA here to avoid needing a second API call
+        const parser = new UAParser(ua);
+        const device = parser.getDevice();
+        const browser = parser.getBrowser();
+        const os = parser.getOS();
+        const deviceType =
+            device.type === "mobile" ? "mobile" : device.type === "tablet" ? "tablet" : "desktop";
+
+        // Geo lookup (best-effort, 2s timeout)
+        let country: string | null = null;
+        let city: string | null = null;
+        try {
+            if (ip && ip !== "unknown" && ip !== "::1" && ip !== "127.0.0.1") {
+                const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
+                    signal: AbortSignal.timeout(2000),
+                });
+                if (geoRes.ok) {
+                    const geo = await geoRes.json();
+                    country = geo.country_name ?? null;
+                    city = geo.city ?? null;
+                }
+            }
+        } catch {
+            // Geo is best-effort
+        }
+
+        // Write scan event directly via Convex HTTP mutation (no auth required)
+        fetch(`${convexUrl}/api/mutation`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                qrCodeId: qrCode._id,
-                userId: qrCode.userId,
-                userAgent: ua,
-                ip,
+                path: "analytics:logScan",
+                format: "json",
+                args: {
+                    qrCodeId: qrCode._id,
+                    userId: qrCode.userId,
+                    country,
+                    city,
+                    device: deviceType,
+                    browser: browser.name ?? null,
+                    os: os.name ?? null,
+                },
             }),
-        }).catch(() => { });
+        }).catch((err) => console.error("[QR Redirect] Scan log failed:", err));
 
         // HTTP 302 redirect — fast, standard, works everywhere
         return NextResponse.redirect(redirectUrl, { status: 302 });

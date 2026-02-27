@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UAParser } from "ua-parser-js";
-import { fetchMutation } from "convex/nextjs";
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,6 +8,12 @@ export async function POST(req: NextRequest) {
 
         if (!qrCodeId || !userId) {
             return NextResponse.json({ ok: false }, { status: 400 });
+        }
+
+        const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+        if (!convexUrl) {
+            console.error("[Scan API] NEXT_PUBLIC_CONVEX_URL is not set");
+            return NextResponse.json({ ok: false }, { status: 500 });
         }
 
         // Parse user agent
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
                     ? "tablet"
                     : "desktop";
 
-        // Geo lookup (best-effort, 2s timeout — never blocks)
+        // Geo lookup (best-effort, 2s timeout)
         let country: string | undefined;
         let city: string | undefined;
         try {
@@ -41,19 +44,33 @@ export async function POST(req: NextRequest) {
                 }
             }
         } catch {
-            // Geo is best-effort
+            // Geo is best-effort, never block
         }
 
-        // Write to Convex using fetchMutation (type-safe, correct format)
-        await fetchMutation(api.analytics.logScan, {
-            qrCodeId: qrCodeId as Id<"qr_codes">,
-            userId,
-            country,
-            city,
-            device: deviceType,
-            browser: browser.name,
-            os: os.name,
+        // Write to Convex via direct HTTP API (no auth required — internal server call)
+        const mutRes = await fetch(`${convexUrl}/api/mutation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                path: "analytics:logScan",
+                format: "json",
+                args: {
+                    qrCodeId,
+                    userId,
+                    country: country ?? null,
+                    city: city ?? null,
+                    device: deviceType,
+                    browser: browser.name ?? null,
+                    os: os.name ?? null,
+                },
+            }),
         });
+
+        if (!mutRes.ok) {
+            const text = await mutRes.text();
+            console.error(`[Scan API] Convex mutation failed: ${mutRes.status}`, text);
+            return NextResponse.json({ ok: false }, { status: 500 });
+        }
 
         return NextResponse.json({ ok: true });
     } catch (err) {
