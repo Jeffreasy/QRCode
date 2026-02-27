@@ -22,7 +22,15 @@ export default defineSchema({
             fgColor: v.optional(v.string()),
             bgColor: v.optional(v.string()),
             logoUrl: v.optional(v.string()),
-            dotStyle: v.optional(v.string()), // "square" | "rounded" | "dots" | "classy"
+            dotStyle: v.optional(v.union(
+                v.literal("square"),
+                v.literal("rounded"),
+                v.literal("dots"),
+                v.literal("classy"),
+                v.literal("classy-rounded"),
+                v.literal("extra-rounded")
+            )),
+            cornerColor: v.optional(v.string()),
             errorCorrectionLevel: v.optional(v.string()), // "L" | "M" | "Q" | "H"
         }),
         totalScans: v.number(),

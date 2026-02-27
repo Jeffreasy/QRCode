@@ -36,7 +36,15 @@ export const createQRCode = mutation({
                 fgColor: v.optional(v.string()),
                 bgColor: v.optional(v.string()),
                 logoUrl: v.optional(v.string()),
-                dotStyle: v.optional(v.string()),
+                dotStyle: v.optional(v.union(
+                    v.literal("square"),
+                    v.literal("rounded"),
+                    v.literal("dots"),
+                    v.literal("classy"),
+                    v.literal("classy-rounded"),
+                    v.literal("extra-rounded")
+                )),
+                cornerColor: v.optional(v.string()),
                 errorCorrectionLevel: v.optional(v.string()),
             })
         ),
@@ -132,7 +140,15 @@ export const updateCustomization = mutation({
             fgColor: v.optional(v.string()),
             bgColor: v.optional(v.string()),
             logoUrl: v.optional(v.string()),
-            dotStyle: v.optional(v.string()),
+            dotStyle: v.optional(v.union(
+                v.literal("square"),
+                v.literal("rounded"),
+                v.literal("dots"),
+                v.literal("classy"),
+                v.literal("classy-rounded"),
+                v.literal("extra-rounded")
+            )),
+            cornerColor: v.optional(v.string()),
             errorCorrectionLevel: v.optional(v.string()),
         }),
     },

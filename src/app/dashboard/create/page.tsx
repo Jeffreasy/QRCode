@@ -41,11 +41,11 @@ const QR_TYPE_ICONS: Record<string, React.FC<{ size?: number }>> = {
 };
 
 const DOT_STYLES = [
-    { value: "square", label: "Vierkant", icon: "⬛" },
-    { value: "rounded", label: "Afgerond", icon: "🟦" },
-    { value: "dots", label: "Dots", icon: "🔵" },
-    { value: "classy", label: "Classy", icon: "◆" },
-    { value: "classy-rounded", label: "Classy Rond", icon: "◈" },
+    { value: "square", label: "Vierkant", shape: <rect x="3" y="3" width="18" height="18" rx="0" /> },
+    { value: "rounded", label: "Afgerond", shape: <rect x="3" y="3" width="18" height="18" rx="6" /> },
+    { value: "dots", label: "Dots", shape: <circle cx="12" cy="12" r="9" /> },
+    { value: "classy", label: "Classy", shape: <><rect x="3" y="3" width="18" height="18" rx="3" /><line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" strokeWidth="1.5" /></> },
+    { value: "classy-rounded", label: "Classy Rond", shape: <><rect x="3" y="3" width="18" height="18" rx="8" /><line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" strokeWidth="1.5" /></> },
 ];
 
 const ERROR_CORRECTION_LEVELS = [
@@ -106,6 +106,7 @@ export default function CreateQRPage() {
         dotStyle: "square",
         errorCorrectionLevel: "M",
         logoUrl: undefined as string | undefined,
+        cornerColor: undefined as string | undefined,
     });
     const [logoInput, setLogoInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -224,9 +225,10 @@ export default function CreateQRPage() {
                 customization: {
                     fgColor: customization.fgColor,
                     bgColor: customization.bgColor,
-                    dotStyle: customization.dotStyle,
+                    dotStyle: customization.dotStyle as "square" | "rounded" | "dots" | "classy" | "classy-rounded" | "extra-rounded",
                     errorCorrectionLevel: customization.errorCorrectionLevel,
                     logoUrl: customization.logoUrl,
+                    cornerColor: customization.cornerColor,
                 },
             });
             router.push(`/dashboard/qr/${result.id}`);
@@ -244,19 +246,19 @@ export default function CreateQRPage() {
 
 
     return (
-        <div className="dashboard-main" style={{ padding: "2rem 2.5rem", maxWidth: "1000px" }}>
+        <div className="dashboard-main create-page" style={{ padding: "2rem 2.5rem" }}>
             {/* Header */}
             <div style={{ marginBottom: "2rem" }}>
-                <h1 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.25rem" }}>
+                <h1 style={{ fontSize: "clamp(1.25rem, 5vw, 1.75rem)", fontWeight: 800, marginBottom: "0.25rem" }}>
                     Nieuwe QR code aanmaken
                 </h1>
-                <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+                <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
                     Volg de stappen om je dynamische QR code in te stellen.
                 </p>
             </div>
 
             {/* Step indicator */}
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2.5rem", alignItems: "center" }}>
+            <div className="create-step-indicator">
                 {STEPS.map((s, i) => (
                     <div key={s} style={{ display: "flex", alignItems: "center", gap: "0.5rem", opacity: i > step ? 0.4 : 1 }}>
                         <div
@@ -280,7 +282,7 @@ export default function CreateQRPage() {
                 ))}
             </div>
 
-            <div className="dashboard-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", alignItems: "start" }}>
+            <div className="dashboard-grid-2col create-wizard-grid" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", alignItems: "start" }}>
                 {/* Main content */}
                 <div className="card" style={{ padding: "2rem" }}>
 
@@ -377,15 +379,19 @@ export default function CreateQRPage() {
                                                 key={ds.value}
                                                 onClick={() => setCustomField("dotStyle", ds.value)}
                                                 style={{
-                                                    padding: "0.5rem 1rem", borderRadius: "var(--radius-md)",
+                                                    padding: "0.5rem 0.875rem",
+                                                    borderRadius: "var(--radius-md)",
                                                     background: customization.dotStyle === ds.value ? "var(--color-accent-bg)" : "var(--color-bg-2)",
                                                     border: `1px solid ${customization.dotStyle === ds.value ? "var(--color-accent-border-active)" : "var(--color-border)"}`,
                                                     cursor: "pointer", color: "var(--color-text)", fontSize: "0.8125rem",
                                                     fontWeight: customization.dotStyle === ds.value ? 600 : 400,
-                                                    transition: "var(--transition)", display: "flex", alignItems: "center", gap: "0.375rem",
+                                                    transition: "var(--transition)",
+                                                    display: "flex", alignItems: "center", gap: "0.5rem",
                                                 }}
                                             >
-                                                <span>{ds.icon}</span>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill={customization.dotStyle === ds.value ? "var(--color-accent)" : "var(--color-text-muted)"} stroke="none">
+                                                    {ds.shape}
+                                                </svg>
                                                 {ds.label}
                                             </button>
                                         ))}
@@ -413,6 +419,32 @@ export default function CreateQRPage() {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                {/* Corner color */}
+                                <div>
+                                    <label className="input-label">Hoekkleur <span style={{ color: "var(--color-text-faint)", fontWeight: 400 }}>(optioneel)</span></label>
+                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                                        <input type="color"
+                                            value={customization.cornerColor ?? customization.fgColor}
+                                            onChange={(e) => setCustomField("cornerColor", e.target.value)}
+                                            style={{ width: "40px", height: "40px", border: "none", cursor: "pointer", borderRadius: "6px" }} />
+                                        <input className="input"
+                                            value={customization.cornerColor ?? ""}
+                                            onChange={(e) => setCustomField("cornerColor", e.target.value || undefined)}
+                                            placeholder="Zelfde als voorgrondkleur"
+                                            style={{ flex: 1 }} />
+                                        {customization.cornerColor && (
+                                            <button className="btn btn-ghost btn-sm"
+                                                onClick={() => setCustomField("cornerColor", undefined)}
+                                                style={{ whiteSpace: "nowrap" }}>
+                                                Reset
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p style={{ fontSize: "0.72rem", color: "var(--color-text-muted)", marginTop: "0.375rem" }}>
+                                        Geef de hoekblokken van de QR code een eigen kleur.
+                                    </p>
                                 </div>
 
                                 {/* Logo upload — dual mode: file picker + URL */}
@@ -584,6 +616,9 @@ export default function CreateQRPage() {
                                 className="btn btn-primary"
                                 onClick={() => setStep(step + 1)}
                                 disabled={isNextDisabled}
+                                title={isNextDisabled
+                                    ? step === 0 ? "Selecteer eerst een QR type" : "Vul eerst alle verplichte velden in"
+                                    : undefined}
                                 style={{ display: "flex", alignItems: "center", gap: "0.375rem", opacity: isNextDisabled ? 0.5 : 1 }}
                             >
                                 Volgende
@@ -621,6 +656,7 @@ export default function CreateQRPage() {
                             errorCorrectionLevel={customization.errorCorrectionLevel as "L" | "M" | "Q" | "H"}
                             size={220}
                             logoUrl={customization.logoUrl}
+                            cornerColor={customization.cornerColor}
                         />
                         {selectedType && QR_TYPE_META[selectedType].isDynamic && (
                             <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "var(--color-accent)", fontFamily: "monospace" }}>

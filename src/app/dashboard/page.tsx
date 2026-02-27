@@ -28,10 +28,10 @@ export default function DashboardPage() {
         <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
             {/* Header */}
             <div style={{ marginBottom: "2rem" }}>
-                <h1 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.25rem" }}>
+                <h1 style={{ fontSize: "clamp(1.25rem, 5vw, 1.75rem)", fontWeight: 800, marginBottom: "0.25rem" }}>
                     Welkom terug{user?.firstName ? `, ${user.firstName}` : ""}!
                 </h1>
-                <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+                <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
                     Beheer al jouw dynamische QR codes op één plek.
                 </p>
             </div>
@@ -81,7 +81,7 @@ export default function DashboardPage() {
             </div>
 
             {/* QR codes grid header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
                 <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Jouw QR codes</h2>
                 <Link href="/dashboard/create" className="btn btn-primary btn-sm" style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                     <PlusIcon size={15} />

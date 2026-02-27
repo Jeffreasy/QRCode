@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import QRCodeStyling from "qr-code-styling";
 
 interface QRDownloadProps {
@@ -11,6 +11,7 @@ interface QRDownloadProps {
     errorCorrectionLevel?: "L" | "M" | "Q" | "H";
     filename?: string;
     logoUrl?: string;
+    cornerColor?: string;
 }
 
 export default function QRDownload({
@@ -21,10 +22,13 @@ export default function QRDownload({
     errorCorrectionLevel = "M",
     filename = "qr-code",
     logoUrl,
+    cornerColor,
 }: QRDownloadProps) {
     const [loadingPng, setLoadingPng] = useState(false);
     const [loadingSvg, setLoadingSvg] = useState(false);
     const [justDownloaded, setJustDownloaded] = useState<"png" | "svg" | null>(null);
+
+    const resolvedCorner = cornerColor ?? fgColor;
 
     function getQR(size: number) {
         return new QRCodeStyling({
@@ -38,8 +42,8 @@ export default function QRDownload({
                 type: dotStyle as any,
             },
             backgroundOptions: { color: bgColor },
-            cornersSquareOptions: { color: fgColor },
-            cornersDotOptions: { color: fgColor },
+            cornersSquareOptions: { color: resolvedCorner },
+            cornersDotOptions: { color: resolvedCorner },
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
                 crossOrigin: "anonymous",
@@ -102,12 +106,24 @@ export default function QRDownload({
                 </div>
             </div>
 
+            {/* Status announcer for screen readers */}
+            <div
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap" }}
+            >
+                {justDownloaded === "png" && "PNG bestand opgeslagen"}
+                {justDownloaded === "svg" && "SVG bestand opgeslagen"}
+            </div>
+
             {/* Buttons */}
             <div style={{ display: "flex", gap: "0.75rem" }}>
                 {/* PNG */}
                 <button
                     onClick={downloadPNG}
                     disabled={loadingPng || loadingSvg}
+                    aria-label="Download QR code als PNG (1024×1024 pixels)"
                     style={{
                         flex: 1,
                         padding: "0.75rem 1rem",
@@ -139,7 +155,7 @@ export default function QRDownload({
                     }}
                 >
                     {loadingPng ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
                             <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                         </svg>
                     ) : justDownloaded === "png" ? (
@@ -163,6 +179,7 @@ export default function QRDownload({
                 <button
                     onClick={downloadSVG}
                     disabled={loadingPng || loadingSvg}
+                    aria-label="Download QR code als SVG vectorformaat"
                     style={{
                         flex: 1,
                         padding: "0.75rem 1rem",
@@ -194,7 +211,7 @@ export default function QRDownload({
                     }}
                 >
                     {loadingSvg ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
                             <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                         </svg>
                     ) : justDownloaded === "svg" ? (
@@ -235,13 +252,6 @@ export default function QRDownload({
                     SVG is schaalbaar voor print zonder kwaliteitsverlies
                 </span>
             </div>
-
-            <style>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     );
 }

@@ -11,6 +11,7 @@ interface QRPreviewProps {
     errorCorrectionLevel?: "L" | "M" | "Q" | "H";
     size?: number;
     logoUrl?: string;
+    cornerColor?: string;
 }
 
 export default function QRPreview({
@@ -21,10 +22,13 @@ export default function QRPreview({
     errorCorrectionLevel = "M",
     size = 220,
     logoUrl,
+    cornerColor,
 }: QRPreviewProps) {
     const ref = useRef<HTMLDivElement>(null);
     const qrRef = useRef<QRCodeStyling | null>(null);
     const [isRendering, setIsRendering] = useState(true);
+
+    const resolvedCorner = cornerColor ?? fgColor;
 
     useEffect(() => {
         if (!ref.current) return;
@@ -42,8 +46,8 @@ export default function QRPreview({
                 type: dotStyle as any,
             },
             backgroundOptions: { color: bgColor },
-            cornersSquareOptions: { color: fgColor },
-            cornersDotOptions: { color: fgColor },
+            cornersSquareOptions: { color: resolvedCorner },
+            cornersDotOptions: { color: resolvedCorner },
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
                 crossOrigin: "anonymous",
@@ -59,11 +63,11 @@ export default function QRPreview({
         const timer = setTimeout(() => setIsRendering(false), 150);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value, fgColor, bgColor, dotStyle, errorCorrectionLevel, size, logoUrl]);
+    }, [value, fgColor, bgColor, dotStyle, errorCorrectionLevel, size, logoUrl, cornerColor]);
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
-            {/* QR Frame */}
+            {/* QR Frame — hover effect handled by .card CSS class on parent */}
             <div
                 style={{
                     position: "relative",
@@ -71,16 +75,7 @@ export default function QRPreview({
                     background: "#ffffff",
                     borderRadius: "var(--radius-xl)",
                     boxShadow: "0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.15), 0 0 48px rgba(56,189,248,0.12)",
-                    transition: "box-shadow 0.3s ease",
                     display: "inline-block",
-                }}
-                onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "0 0 0 1px rgba(56,189,248,0.2), 0 12px 40px rgba(0,0,0,0.2), 0 0 64px rgba(56,189,248,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow =
-                        "0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.15), 0 0 48px rgba(56,189,248,0.12)";
                 }}
             >
                 {/* Skeleton overlay while rendering */}
@@ -89,9 +84,9 @@ export default function QRPreview({
                         position: "absolute",
                         inset: "1.25rem",
                         borderRadius: "var(--radius-md)",
-                        background: "linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)",
+                        background: "linear-gradient(90deg, var(--skeleton-from) 25%, var(--skeleton-to) 50%, var(--skeleton-from) 75%)",
                         backgroundSize: "200% 100%",
-                        animation: "qr-shimmer 1.2s infinite",
+                        animation: "shimmer 1.2s infinite",
                         zIndex: 2,
                     }} />
                 )}
@@ -99,6 +94,8 @@ export default function QRPreview({
                 {/* Actual QR canvas */}
                 <div
                     ref={ref}
+                    aria-label="QR code preview"
+                    role="img"
                     style={{
                         opacity: isRendering ? 0 : 1,
                         transition: "opacity 0.25s ease",
@@ -154,10 +151,6 @@ export default function QRPreview({
             </div>
 
             <style>{`
-                @keyframes qr-shimmer {
-                    from { background-position: -200% 0; }
-                    to { background-position: 200% 0; }
-                }
                 @keyframes qr-pulse {
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50% { opacity: 0.5; transform: scale(0.8); }

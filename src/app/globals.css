@@ -355,6 +355,20 @@ body {
   animation: pulse-glow 3s ease-in-out infinite;
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 .skeleton {
   background: linear-gradient(90deg,
       var(--color-surface) 25%,
@@ -402,16 +416,6 @@ body {
   margin: 1rem 0;
 }
 
-/* QR Preview Container */
-.qr-preview {
-  background: #fff;
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-glow-lg);
-}
 
 /* ============================================
    EXTRA DESIGN TOKENS (semantic)
@@ -426,6 +430,21 @@ body {
   --color-danger-border: rgba(248, 113, 113, 0.2);
   --color-muted-bg: rgba(148, 163, 184, 0.1);
   --color-muted-border: rgba(148, 163, 184, 0.1);
+
+  /* Warning tokens — dark theme */
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.1);
+  --color-warning-border: rgba(251, 191, 36, 0.25);
+
+  /* Error tokens — dark theme */
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.1);
+  --color-error-border: rgba(248, 113, 113, 0.2);
+
+  /* Skeleton shimmer tokens */
+  --skeleton-from: var(--color-surface);
+  --skeleton-to: var(--color-surface-2);
+
   --sidebar-width: 240px;
 }
 
@@ -472,7 +491,7 @@ body {
   }
 
   .dashboard-stats-grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important;
   }
 
   .mobile-header {
@@ -590,6 +609,64 @@ body {
     display: none;
   }
 }
+
+/* ============================================
+   DASHBOARD / CREATE PAGE LAYOUT
+   ============================================ */
+
+/* Create page max-width constraint */
+.create-page {
+  max-width: 1000px;
+}
+
+/* Step indicator: scrollable on mobile, no wrap */
+.create-step-indicator {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  /* hide scrollbar on mobile — steps remain reachable by scrolling */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.create-step-indicator::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dashboard main — responsive padding */
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding: 1.25rem 1rem !important;
+  }
+
+  /* Step indicator stays scrollable but labels get smaller */
+  .create-step-indicator span {
+    font-size: 0.75rem !important;
+  }
+
+  /* Wizard grid: stack preview below main card */
+  .create-wizard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* QR detail: sticky preview panel becomes static on mobile */
+  .create-wizard-grid>div:last-child {
+    position: static !important;
+  }
+}
+
+/* ============================================
+   FOCUS VISIBLE — Global accessible focus ring
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
 
 /* ============================================
    REDUCED MOTION
