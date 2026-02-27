@@ -3,7 +3,13 @@ import { ClerkProvider } from "@clerk/nextjs";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://qrcodemaster.app";
+const rawSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://qrcodemaster.app");
+
+// Ensure protocol is always present (Vercel env vars sometimes omit it)
+const siteUrl = rawSiteUrl.startsWith("http") ? rawSiteUrl : `https://${rawSiteUrl}`;
+
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
