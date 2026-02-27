@@ -8,6 +8,7 @@ import { useMutation, useConvexAuth } from "convex/react";
 
 import { useRouter } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
+
 import { QR_TYPE_META, QRType, QRPayload, encodePayload, isValidUrl } from "@/lib/qr-types";
 import QRPreview from "@/components/qr/QRPreview";
 import {
@@ -108,7 +109,14 @@ export default function CreateQRPage() {
     });
     const [logoInput, setLogoInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+    const [logoStorageId, setLogoStorageId] = useState<string | undefined>();
     const [errorMsg, setErrorMsg] = useState("");
+
+    const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
+    const getStorageUrl = useMutation(api.storage.getStorageUrl);
+    const deleteStorageFile = useMutation(api.storage.deleteStorageFile);
+
 
     // Resolve the real origin client-side only (avoids SSR/CSR hydration mismatch)
     const [siteUrl, setSiteUrl] = useState(
@@ -148,10 +156,56 @@ export default function CreateQRPage() {
         }
     };
 
+    const handleLogoFile = async (file: File) => {
+        if (!file) return;
+        // Only allow images
+        if (!file.type.startsWith("image/")) {
+            setErrorMsg("Alleen afbeeldingen zijn toegestaan (PNG, JPG, SVG, WEBP).");
+            return;
+        }
+        // Max 2MB
+        if (file.size > 2 * 1024 * 1024) {
+            setErrorMsg("Afbeelding mag maximaal 2MB zijn.");
+            return;
+        }
+        setIsUploadingLogo(true);
+        setErrorMsg("");
+        try {
+            // Delete previous uploaded file if any
+            if (logoStorageId) {
+                await deleteStorageFile({ storageId: logoStorageId }).catch(() => { });
+            }
+            // 1. Get a short-lived upload URL from Convex
+            const uploadUrl = await generateUploadUrl();
+            // 2. PUT the file directly to Convex storage
+            const putRes = await fetch(uploadUrl, {
+                method: "PUT",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            if (!putRes.ok) throw new Error("Upload mislukt.");
+            const { storageId } = await putRes.json();
+            // 3. Get the public URL
+            const publicUrl = await getStorageUrl({ storageId });
+            if (!publicUrl) throw new Error("Kon geen publieke URL ophalen.");
+            setLogoStorageId(storageId);
+            setCustomization((prev) => ({ ...prev, logoUrl: publicUrl, errorCorrectionLevel: "H" }));
+        } catch (err) {
+            setErrorMsg(err instanceof Error ? err.message : "Logo upload mislukt.");
+        } finally {
+            setIsUploadingLogo(false);
+        }
+    };
+
     const handleLogoClear = () => {
         setLogoInput("");
+        if (logoStorageId) {
+            deleteStorageFile({ storageId: logoStorageId }).catch(() => { });
+            setLogoStorageId(undefined);
+        }
         setCustomization((prev) => ({ ...prev, logoUrl: undefined }));
     };
+
 
     async function handleCreate() {
         if (!isAuthenticated || !selectedType) {
@@ -360,10 +414,54 @@ export default function CreateQRPage() {
                                     </div>
                                 </div>
 
-                                {/* Logo upload */}
+                                {/* Logo upload — dual mode: file picker + URL */}
                                 <div>
-                                    <label className="input-label">Logo URL (optioneel)</label>
-                                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                                    <label className="input-label">Logo (optioneel)</label>
+
+                                    {/* Tab selector */}
+                                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                                        <label
+                                            style={{
+                                                flex: 1,
+                                                padding: "0.6rem 0",
+                                                borderRadius: "var(--radius-md)",
+                                                border: "2px dashed var(--color-accent-border)",
+                                                background: "var(--color-accent-bg)",
+                                                cursor: isUploadingLogo ? "not-allowed" : "pointer",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                gap: "0.25rem",
+                                                transition: "var(--transition)",
+                                                opacity: isUploadingLogo ? 0.6 : 1,
+                                            }}
+                                        >
+                                            <input
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                                                style={{ display: "none" }}
+                                                disabled={isUploadingLogo}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleLogoFile(file);
+                                                    e.target.value = "";
+                                                }}
+                                            />
+                                            <span style={{ fontSize: "1.25rem" }}>
+                                                {isUploadingLogo ? "⏳" : "📁"}
+                                            </span>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-accent)" }}>
+                                                {isUploadingLogo ? "Uploaden..." : "Uploaden vanaf device"}
+                                            </span>
+                                            <span style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>
+                                                PNG, JPG, SVG, WEBP · max 2MB
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    {/* URL fallback */}
+                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>Of via URL:</span>
                                         <input
                                             className="input"
                                             placeholder="https://jouwwebsite.nl/logo.png"
@@ -374,27 +472,33 @@ export default function CreateQRPage() {
                                         <button className="btn btn-secondary" onClick={handleLogoApply} style={{ whiteSpace: "nowrap" }}>
                                             Toepassen
                                         </button>
-                                        {customization.logoUrl && (
-                                            <button className="btn btn-ghost" onClick={handleLogoClear}>
-                                                ✕
-                                            </button>
-                                        )}
                                     </div>
+
+                                    {/* Active logo preview */}
                                     {customization.logoUrl && (
-                                        <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                        <div style={{ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.625rem", background: "var(--color-success-bg)", border: "1px solid var(--color-success-border)", borderRadius: "var(--radius-md)" }}>
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={customization.logoUrl} alt="Logo preview" style={{ width: "40px", height: "40px", objectFit: "contain", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", background: "#fff" }} />
-                                            <span style={{ fontSize: "0.75rem", color: "var(--color-accent)", fontWeight: 500 }}>
-                                                ✓ Logo actief — foutcorrectie automatisch ingesteld op H
-                                            </span>
+                                            <img src={customization.logoUrl} alt="Logo preview" style={{ width: "36px", height: "36px", objectFit: "contain", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", background: "#fff", flexShrink: 0 }} />
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: "0.75rem", color: "var(--color-success)", fontWeight: 600 }}>✓ Logo actief</div>
+                                                <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>Foutcorrectie automatisch op H gezet</div>
+                                            </div>
+                                            <button
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={handleLogoClear}
+                                                style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
+                                            >
+                                                Verwijderen
+                                            </button>
                                         </div>
                                     )}
-                                    {!customization.logoUrl && (
-                                        <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.375rem" }}>
-                                            Voeg een directe URL in naar een PNG of SVG logo. Foutcorrectie wordt automatisch op Maximum gezet.
+                                    {!customization.logoUrl && !isUploadingLogo && (
+                                        <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
+                                            Een logo in het midden van je QR code verhoogt de herkenbaarheid.
                                         </p>
                                     )}
                                 </div>
+
                             </div>
                         </div>
                     )}

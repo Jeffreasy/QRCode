@@ -11,6 +11,7 @@
 import type * as analytics from "../analytics.js";
 import type * as http from "../http.js";
 import type * as qrCodes from "../qrCodes.js";
+import type * as storage from "../storage.js";
 
 import type {
   ApiFromModules,
@@ -22,6 +23,7 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   http: typeof http;
   qrCodes: typeof qrCodes;
+  storage: typeof storage;
 }>;
 
 /**
