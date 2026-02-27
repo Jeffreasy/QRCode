@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx concurrently \"npx convex dev\" \"next dev\"",
+    "dev": "concurrently \"npx convex dev\" \"next dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -26,6 +26,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ua-parser-js": "^0.7.39",
+    "concurrently": "^9.1.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.9",
     "tailwindcss": "^4",

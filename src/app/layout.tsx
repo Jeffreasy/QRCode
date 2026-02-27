@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     description: "Professionele dynamische QR codes",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: process.env.NODE_ENV === "production",
+    follow: process.env.NODE_ENV === "production",
   },
 };
 
