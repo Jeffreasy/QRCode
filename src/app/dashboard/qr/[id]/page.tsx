@@ -321,7 +321,9 @@ export default function QRDetailPage() {
                         dotStyle={qrCode.customization?.dotStyle ?? "square"}
                         errorCorrectionLevel={(qrCode.customization?.errorCorrectionLevel ?? "M") as "L" | "M" | "Q" | "H"}
                         filename={qrCode.slug}
+                        logoUrl={qrCode.customization?.logoUrl ?? undefined}
                     />
+
                 </div>
             </div>
         </div>

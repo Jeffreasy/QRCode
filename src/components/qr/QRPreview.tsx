@@ -43,10 +43,12 @@ export default function QRPreview({
             cornersDotOptions: { color: fgColor },
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
+                crossOrigin: "anonymous",
                 hideBackgroundDots: true,
                 imageSize: 0.35,
                 margin: 4,
             },
+
         });
         qrRef.current.append(ref.current);
         // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -40,10 +40,12 @@ export default function QRDownload({
             cornersDotOptions: { color: fgColor },
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
+                crossOrigin: "anonymous",
                 hideBackgroundDots: true,
                 imageSize: 0.35,
                 margin: 4,
             },
+
         });
     }
 
