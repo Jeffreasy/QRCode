@@ -50,6 +50,10 @@ export default defineSchema({
             borderColor: v.optional(v.string()),
             borderWidth: v.optional(v.number()), // px
             borderRadius: v.optional(v.number()), // px
+            // Logo image options
+            logoSize: v.optional(v.number()),   // 0.1 – 0.5 (imageSize)
+            logoMargin: v.optional(v.number()), // 0 – 20 (margin px)
+            logoHideDots: v.optional(v.boolean()), // hideBackgroundDots
             errorCorrectionLevel: v.optional(v.string()), // "L" | "M" | "Q" | "H"
         }),
         totalScans: v.number(),

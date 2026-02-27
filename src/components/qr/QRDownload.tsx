@@ -20,6 +20,9 @@ export default function QRDownload({
     cornerDotType,
     qrShape = "square",
     backgroundRound = 0,
+    logoSize = 0.35,
+    logoMargin = 4,
+    logoHideDots = true,
 }: QRDownloadProps) {
     const [loadingPng, setLoadingPng] = useState(false);
     const [loadingSvg, setLoadingSvg] = useState(false);
@@ -54,9 +57,9 @@ export default function QRDownload({
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
                 crossOrigin: "anonymous",
-                hideBackgroundDots: true,
-                imageSize: 0.35,
-                margin: 4,
+                hideBackgroundDots: logoHideDots,
+                imageSize: logoSize,
+                margin: logoMargin,
             },
         });
     }

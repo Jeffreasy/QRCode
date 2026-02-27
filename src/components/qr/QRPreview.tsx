@@ -19,6 +19,10 @@ export interface QRCustomization {
     borderColor?: string;
     borderWidth?: number;
     borderRadius?: number;
+    // Logo image options
+    logoSize?: number;       // 0.1 – 0.5 (imageSize fraction)
+    logoMargin?: number;     // 0 – 20 px
+    logoHideDots?: boolean;  // hide QR dots behind logo
 }
 
 interface QRPreviewProps extends QRCustomization {
@@ -43,6 +47,9 @@ export default function QRPreview({
     borderColor = "#38bdf8",
     borderWidth = 4,
     borderRadius = 16,
+    logoSize = 0.35,
+    logoMargin = 4,
+    logoHideDots = true,
 }: QRPreviewProps) {
     const ref = useRef<HTMLDivElement>(null);
     const [isRendering, setIsRendering] = useState(true);
@@ -83,9 +90,9 @@ export default function QRPreview({
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
                 crossOrigin: "anonymous",
-                hideBackgroundDots: true,
-                imageSize: 0.35,
-                margin: 4,
+                hideBackgroundDots: logoHideDots,
+                imageSize: logoSize,
+                margin: logoMargin,
             },
         });
 
@@ -94,7 +101,8 @@ export default function QRPreview({
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value, fgColor, bgColor, dotStyle, errorCorrectionLevel, size, logoUrl,
-        cornerColor, cornerSquareType, cornerDotType, qrShape, backgroundRound]);
+        cornerColor, cornerSquareType, cornerDotType, qrShape, backgroundRound,
+        logoSize, logoMargin, logoHideDots]);
 
     const activeBorderRadius = borderEnabled ? borderRadius ?? 16 : 20;
     const activeBorderStyle = borderEnabled
