@@ -69,12 +69,15 @@ export default defineSchema({
         userId: v.string(), // For efficient user-scoped queries
         scannedAt: v.number(),
         country: v.optional(v.string()),
+        region: v.optional(v.string()),  // Province / state
         city: v.optional(v.string()),
         device: v.optional(v.string()), // "mobile" | "tablet" | "desktop"
         browser: v.optional(v.string()),
         os: v.optional(v.string()),
+        referrer: v.optional(v.string()), // "Direct" | "Instagram" | "Google" | etc.
     })
         .index("by_qr_code", ["qrCodeId"])
         .index("by_qr_code_time", ["qrCodeId", "scannedAt"])
-        .index("by_user", ["userId"]),
+        .index("by_user", ["userId"])
+        .index("by_user_time", ["userId", "scannedAt"]),
 });

@@ -4,9 +4,17 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import ScanChart from "@/components/analytics/ScanChart";
-import { BarChartIcon, SmartphoneIcon, GlobeIcon, QrCodeIcon } from "@/components/ui/icons";
+import {
+    BarChartIcon,
+    SmartphoneIcon,
+    GlobeIcon,
+    QrCodeIcon,
+    MapPinIcon,
+    ZapIcon,
+    ShareIcon,
+    MonitorIcon,
+} from "@/components/ui/icons";
 
-// Browser icon
 function BrowserIcon({ size = 16 }: { size?: number }) {
     return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -23,8 +31,14 @@ export default function GlobalAnalyticsPage() {
     const stats = useQuery(api.analytics.getGlobalScanStats, { days });
     const qrCodes = useQuery(api.qrCodes.listByUser, {});
 
+    // Convert hourly data format for ScanChart
+    const hourData = stats?.scansByHour?.map((h) => ({
+        hour: String(h.hour),
+        count: h.count,
+    }));
+
     return (
-        <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
+        <div id="main-content" className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
@@ -51,13 +65,13 @@ export default function GlobalAnalyticsPage() {
                 </div>
             </div>
 
-            {/* Top stats */}
+            {/* Top KPI stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
                 {[
                     { label: "Totale scans", value: stats?.total ?? "—", Icon: BarChartIcon },
                     { label: "QR codes", value: qrCodes?.length ?? "—", Icon: QrCodeIcon },
-                    { label: "Unieke apparaten", value: stats ? Object.keys(stats.deviceBreakdown).length : "—", Icon: SmartphoneIcon },
                     { label: "Landen bereikt", value: stats ? Object.keys(stats.countryBreakdown).filter(c => c !== "Unknown").length : "—", Icon: GlobeIcon },
+                    { label: "Steden bereikt", value: stats ? Object.keys(stats.cityBreakdown).filter(c => c !== "Unknown").length : "—", Icon: MapPinIcon },
                 ].map(({ label, value, Icon }) => (
                     <div key={label} className="card" style={{ padding: "1.25rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
@@ -71,44 +85,45 @@ export default function GlobalAnalyticsPage() {
                 ))}
             </div>
 
-            {/* Scans over time chart */}
+            {/* Scan activity chart — day + hour toggle */}
             {stats ? (
-                <div className="card" style={{ padding: "1.5rem", marginBottom: "2rem" }}>
-                    <h3 style={{ fontWeight: 700, marginBottom: "1.25rem", fontSize: "1rem" }}>
-                        Scans over de laatste {days} dagen
-                    </h3>
-                    <ScanChart data={stats.scansByDay} />
+                <div style={{ marginBottom: "2rem" }}>
+                    <ScanChart data={stats.scansByDay} hourData={hourData} />
                 </div>
             ) : (
-                <div className="skeleton" style={{ height: "200px", borderRadius: "var(--radius-lg)", marginBottom: "2rem" }} />
+                <div className="skeleton" style={{ height: "220px", borderRadius: "var(--radius-lg)", marginBottom: "2rem" }} />
             )}
 
-            {/* Breakdown cards */}
+            {/* Row 1: Device + Country + Browser */}
             {stats ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "1.5rem" }}>
-                    <BreakdownCard icon={<SmartphoneIcon size={14} />} title="Apparaat verdeling" data={stats.deviceBreakdown} />
-                    <BreakdownCard icon={<GlobeIcon size={14} />} title="Land verdeling" data={stats.countryBreakdown} />
-                    <BreakdownCard icon={<BrowserIcon size={14} />} title="Browser verdeling" data={stats.browserBreakdown} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                    <BreakdownCard icon={<SmartphoneIcon size={14} />} title="Apparaat" data={stats.deviceBreakdown} />
+                    <BreakdownCard icon={<GlobeIcon size={14} />} title="Land" data={stats.countryBreakdown} />
+                    <BreakdownCard icon={<BrowserIcon size={14} />} title="Browser" data={stats.browserBreakdown} />
                 </div>
-            ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem" }}>
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="skeleton" style={{ height: "200px", borderRadius: "var(--radius-lg)" }} />
-                    ))}
-                </div>
-            )}
+            ) : <SkeletonRow count={3} />}
 
-            {/* Per-QR code scan leaderboard */}
+            {/* Row 2: City + Region + OS + Referrer */}
+            {stats ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
+                    <BreakdownCard icon={<MapPinIcon size={14} />} title="Stad" data={stats.cityBreakdown} />
+                    <BreakdownCard icon={<ZapIcon size={14} />} title="Regio / Provincie" data={stats.regionBreakdown} />
+                    <BreakdownCard icon={<MonitorIcon size={14} />} title="Besturingssysteem" data={stats.osBreakdown} />
+                    <BreakdownCard icon={<ShareIcon size={14} />} title="Herkomst (Referrer)" data={stats.referrerBreakdown} />
+                </div>
+            ) : <SkeletonRow count={4} />}
+
+            {/* Per-QR leaderboard */}
             {qrCodes && qrCodes.length > 0 && (
-                <div className="card" style={{ padding: "1.5rem", marginTop: "2rem" }}>
+                <div className="card" style={{ padding: "1.5rem", marginTop: "0.5rem" }}>
                     <h3 style={{ fontWeight: 700, marginBottom: "1.25rem", fontSize: "1rem" }}>Top QR codes (op scans)</h3>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                         {[...qrCodes]
                             .sort((a, b) => b.totalScans - a.totalScans)
                             .slice(0, 10)
                             .map((qr, i) => {
-                                const maxScans = qrCodes[0] ? Math.max(...qrCodes.map(q => q.totalScans)) : 1;
-                                const pct = maxScans > 0 ? Math.round((qr.totalScans / maxScans) * 100) : 0;
+                                const maxScans = Math.max(...qrCodes.map(q => q.totalScans), 1);
+                                const pct = Math.round((qr.totalScans / maxScans) * 100);
                                 return (
                                     <div key={qr._id as string} style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
                                         <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-faint)", minWidth: "1.25rem" }}>
@@ -129,6 +144,16 @@ export default function GlobalAnalyticsPage() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function SkeletonRow({ count }: { count: number }) {
+    return (
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${count}, 1fr)`, gap: "1.5rem", marginBottom: "1.5rem" }}>
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: "200px", borderRadius: "var(--radius-lg)" }} />
+            ))}
         </div>
     );
 }
@@ -156,11 +181,19 @@ function BreakdownCard({ icon, title, data }: { icon?: React.ReactNode; title: s
                         return (
                             <div key={key}>
                                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
-                                    <span style={{ color: "var(--color-text-muted)" }}>{key}</span>
-                                    <span style={{ fontWeight: 600 }}>{pct}%</span>
+                                    <span style={{ color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>{key}</span>
+                                    <span style={{ fontWeight: 600, flexShrink: 0 }}>{pct}%</span>
                                 </div>
                                 <div style={{ height: "4px", background: "var(--color-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
-                                    <div style={{ height: "100%", width: `${pct}%`, background: "var(--gradient-brand)", borderRadius: "100px", transition: "width 0.5s ease" }} />
+                                    <div
+                                        style={{
+                                            height: "100%",
+                                            width: `${pct}%`,
+                                            background: "var(--gradient-brand)",
+                                            borderRadius: "100px",
+                                            transition: "width 0.5s ease",
+                                        }}
+                                    />
                                 </div>
                             </div>
                         );
