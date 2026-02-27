@@ -704,14 +704,14 @@ body {
 /* Touch-target enforcement (WCAG 2.5.5) */
 @media (hover: none) and (pointer: coarse) {
 
-  .btn,
+  .btn:not(.qr-checkbox),
   .sidebar-link,
-  button {
+  button:not(.qr-checkbox) {
     min-height: 44px;
     min-width: 44px;
   }
 
-  .btn-sm {
+  .btn-sm:not(.qr-checkbox) {
     min-height: 36px;
   }
 }

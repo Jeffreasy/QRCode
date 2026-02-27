@@ -412,6 +412,7 @@ function QRCodeCard({
             {/* Select checkbox */}
             <button
                 onClick={(e) => { e.preventDefault(); onSelect(); }}
+                className="qr-checkbox"
                 style={{
                     position: "absolute",
                     top: "0.75rem",
