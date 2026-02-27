@@ -225,8 +225,18 @@ export default function QRDetailPage() {
                             size={220}
                             logoUrl={qrCode.customization?.logoUrl}
                         />
-                        <p style={{ fontSize: "0.75rem", color: "var(--color-text-faint)", marginTop: "1rem", fontFamily: "monospace" }}>
-                            {redirectUrl}
+                        {/* Show where this QR redirects — the important info */}
+                        <div style={{ marginTop: "1rem", padding: "0.625rem 0.875rem", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: "var(--radius-md)" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--color-success)", fontWeight: 600, marginBottom: "0.25rem" }}>
+                                ↗ Scannen stuurt door naar:
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--color-text)", fontFamily: "monospace", wordBreak: "break-all" }}>
+                                {qrCode.destination}
+                            </div>
+                        </div>
+                        {/* Technical redirect URL — smaller, secondary info */}
+                        <p style={{ marginTop: "0.5rem", fontSize: "0.65rem", color: "var(--color-text-faint)", fontFamily: "monospace" }}>
+                            via {redirectUrl}
                         </p>
                     </div>
 
