@@ -76,6 +76,14 @@ export type QRPayload =
     | SocialPayload;
 
 /**
+ * Validates that a URL is non-empty and starts with http:// or https://.
+ */
+export function isValidUrl(url: string): boolean {
+    const trimmed = url.trim();
+    return trimmed.startsWith("http://") || trimmed.startsWith("https://");
+}
+
+/**
  * Encode payload into the QR code data string
  * For dynamic types (url, file, social) this returns the redirect slug URL.
  * For static types (vcard, wifi, text, email, sms) this returns the raw encoded string.
@@ -83,7 +91,7 @@ export type QRPayload =
 export function encodePayload(type: QRType, payload: QRPayload): string {
     switch (type) {
         case "url":
-            return (payload as URLPayload).url;
+            return (payload as URLPayload).url.trim();
 
         case "vcard": {
             const v = payload as VCardPayload;

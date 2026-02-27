@@ -4,6 +4,12 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
+import {
+    QrCodeIcon,
+    BarChartIcon,
+    CheckIcon,
+    PlusIcon,
+} from "@/components/ui/icons";
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -15,12 +21,18 @@ export default function DashboardPage() {
     const totalScans = qrCodes?.reduce((sum, qr) => sum + qr.totalScans, 0) ?? 0;
     const activeCount = qrCodes?.filter((qr) => qr.isActive).length ?? 0;
 
+    const STATS = [
+        { label: "Totale QR codes", value: qrCodes?.length ?? 0, Icon: QrCodeIcon, color: "var(--color-accent)", bg: "var(--color-accent-bg)", border: "var(--color-accent-border)" },
+        { label: "Actief", value: activeCount, Icon: CheckIcon, color: "var(--color-success)", bg: "var(--color-success-bg)", border: "var(--color-success-border)" },
+        { label: "Totale scans", value: totalScans, Icon: BarChartIcon, color: "var(--color-accent)", bg: "var(--color-accent-bg)", border: "var(--color-accent-border)" },
+    ];
+
     return (
-        <div style={{ padding: "2rem 2.5rem" }}>
+        <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
             {/* Header */}
             <div style={{ marginBottom: "2rem" }}>
                 <h1 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.25rem" }}>
-                    Welkom terug{user?.firstName ? `, ${user.firstName}` : ""}! 👋
+                    Welkom terug{user?.firstName ? `, ${user.firstName}` : ""}!
                 </h1>
                 <p style={{ color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
                     Beheer al jouw dynamische QR codes op één plek.
@@ -29,6 +41,7 @@ export default function DashboardPage() {
 
             {/* Stats row */}
             <div
+                className="dashboard-stats-grid"
                 style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(3, 1fr)",
@@ -36,34 +49,46 @@ export default function DashboardPage() {
                     marginBottom: "2.5rem",
                 }}
             >
-                {[
-                    { label: "Totale QR codes", value: qrCodes?.length ?? 0, icon: "⬡", color: "var(--color-accent)" },
-                    { label: "Actief", value: activeCount, icon: "✓", color: "var(--color-success)" },
-                    { label: "Totale scans", value: totalScans, icon: "📊", color: "var(--color-accent-2)" },
-                ].map((stat) => (
+                {STATS.map(({ label, value, Icon, color, bg, border }) => (
                     <div
-                        key={stat.label}
+                        key={label}
                         className="card"
                         style={{ padding: "1.25rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}
                     >
                         <div>
                             <div style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginBottom: "0.25rem" }}>
-                                {stat.label}
+                                {label}
                             </div>
-                            <div style={{ fontSize: "2rem", fontWeight: 800, color: stat.color }}>
-                                {stat.value}
+                            <div style={{ fontSize: "2rem", fontWeight: 800, color }}>
+                                {value}
                             </div>
                         </div>
-                        <div style={{ fontSize: "2rem", opacity: 0.5 }}>{stat.icon}</div>
+                        <div
+                            style={{
+                                width: "44px",
+                                height: "44px",
+                                borderRadius: "var(--radius-md)",
+                                background: bg,
+                                border: `1px solid ${border}`,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color,
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Icon size={20} />
+                        </div>
                     </div>
                 ))}
             </div>
 
-            {/* QR codes grid */}
+            {/* QR codes grid header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
                 <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Jouw QR codes</h2>
-                <Link href="/dashboard/create" className="btn btn-primary btn-sm">
-                    + Nieuwe QR code
+                <Link href="/dashboard/create" className="btn btn-primary btn-sm" style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                    <PlusIcon size={15} />
+                    Nieuwe QR code
                 </Link>
             </div>
 
@@ -91,13 +116,29 @@ export default function DashboardPage() {
                         textAlign: "center",
                     }}
                 >
-                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⬡</div>
+                    <div
+                        style={{
+                            width: "56px",
+                            height: "56px",
+                            borderRadius: "var(--radius-lg)",
+                            background: "var(--color-accent-bg)",
+                            border: "1px solid var(--color-accent-border)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 1.25rem",
+                            color: "var(--color-accent)",
+                        }}
+                    >
+                        <QrCodeIcon size={26} />
+                    </div>
                     <h3 style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Nog geen QR codes</h3>
                     <p style={{ color: "var(--color-text-muted)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
                         Maak je eerste dynamische QR code aan in minder dan een minuut.
                     </p>
-                    <Link href="/dashboard/create" className="btn btn-primary">
-                        + Eerste QR code aanmaken
+                    <Link href="/dashboard/create" className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem" }}>
+                        <PlusIcon size={16} />
+                        Eerste QR code aanmaken
                     </Link>
                 </div>
             )}
@@ -120,13 +161,22 @@ export default function DashboardPage() {
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function QRCodeCard({ qr }: { qr: any }) {
+interface QRCodeCardProps {
+    _id: string;
+    slug: string;
+    title: string;
+    type: string;
+    isActive: boolean;
+    totalScans: number;
+    createdAt: number;
+}
+
+function QRCodeCard({ qr }: { qr: QRCodeCardProps }) {
     return (
         <Link
             href={`/dashboard/qr/${qr._id}`}
             className="card glass-hover"
-            style={{ padding: "1.25rem", textDecoration: "none", display: "block" }}
+            style={{ padding: "1.25rem", textDecoration: "none", display: "block", cursor: "pointer" }}
         >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
                 <div
@@ -134,10 +184,10 @@ function QRCodeCard({ qr }: { qr: any }) {
                         fontSize: "0.75rem",
                         fontWeight: 600,
                         color: "var(--color-accent)",
-                        background: "rgba(56,189,248,0.1)",
+                        background: "var(--color-accent-bg)",
                         padding: "0.25rem 0.625rem",
                         borderRadius: "100px",
-                        border: "1px solid rgba(56,189,248,0.15)",
+                        border: "1px solid var(--color-accent-border)",
                     }}
                 >
                     {qr.type.toUpperCase()}
@@ -151,9 +201,9 @@ function QRCodeCard({ qr }: { qr: any }) {
                         borderRadius: "100px",
                         fontSize: "0.75rem",
                         fontWeight: 600,
-                        background: qr.isActive ? "rgba(52,211,153,0.1)" : "rgba(148,163,184,0.1)",
+                        background: qr.isActive ? "var(--color-success-bg)" : "var(--color-muted-bg)",
                         color: qr.isActive ? "var(--color-success)" : "var(--color-text-muted)",
-                        border: `1px solid ${qr.isActive ? "rgba(52,211,153,0.2)" : "rgba(148,163,184,0.1)"}`,
+                        border: `1px solid ${qr.isActive ? "var(--color-success-border)" : "var(--color-muted-border)"}`,
                     }}
                 >
                     <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
@@ -189,7 +239,7 @@ function QRCodeCard({ qr }: { qr: any }) {
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
-                    <span>📊</span>
+                    <BarChartIcon size={14} />
                     <span>{qr.totalScans} scans</span>
                 </div>
                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>

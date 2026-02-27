@@ -1,14 +1,62 @@
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
+import {
+  QrCodeIcon,
+  BarChartIcon,
+  LinkIcon,
+  PaletteIcon,
+  PackageIcon,
+  ZapIcon,
+  UsersIcon,
+  RefreshIcon,
+  SparkleIcon,
+} from "@/components/ui/icons";
+
+// Stat and feature data — typed for safety
+const STATS = [
+  { value: "8", label: "QR types", Icon: PackageIcon },
+  { value: "<50ms", label: "Redirect tijd", Icon: ZapIcon },
+  { value: "∞", label: "Wijzigingen", Icon: RefreshIcon },
+] as const;
+
+const FEATURES = [
+  {
+    Icon: LinkIcon,
+    title: "Dynamische bestemmingen",
+    desc: "Wijzig de URL achter je QR code op elk moment. De gedrukte code blijft altijd hetzelfde.",
+  },
+  {
+    Icon: BarChartIcon,
+    title: "Realtime analytics",
+    desc: "Zie precies wanneer, waar en op welk device mensen jouw QR code scannen.",
+  },
+  {
+    Icon: PaletteIcon,
+    title: "Volledig aanpasbaar",
+    desc: "Voeg jouw logo toe, kies kleuren en dot-stijlen. Download als SVG of PNG.",
+  },
+  {
+    Icon: PackageIcon,
+    title: "8 QR types",
+    desc: "URL, vCard, WiFi, Email, SMS, Tekst, PDF en Social — alles in één platform.",
+  },
+  {
+    Icon: ZapIcon,
+    title: "Razendsnel",
+    desc: "Sub-50ms redirects dankzij Next.js Edge Middleware. Scanners wachten nooit.",
+  },
+  {
+    Icon: UsersIcon,
+    title: "Multi-user",
+    desc: "Meerdere gebruikers op één platform. Iedereen beheert zijn eigen QR codes.",
+  },
+] as const;
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-grid relative overflow-hidden">
       {/* Ambient background glows */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-      >
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div
           style={{
             position: "absolute",
@@ -16,8 +64,7 @@ export default function HomePage() {
             left: "20%",
             width: "600px",
             height: "600px",
-            background:
-              "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)",
             borderRadius: "50%",
             filter: "blur(40px)",
           }}
@@ -29,16 +76,24 @@ export default function HomePage() {
             right: "15%",
             width: "500px",
             height: "500px",
-            background:
-              "radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)",
             borderRadius: "50%",
             filter: "blur(40px)",
           }}
         />
       </div>
 
-      {/* Navbar */}
-      <nav className="glass sticky top-0 z-50 border-b" style={{ borderColor: "var(--color-border)" }}>
+      {/* Navbar — floating style */}
+      <nav
+        className="glass"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          borderBottom: "1px solid var(--color-border)",
+        }}
+        aria-label="Hoofdnavigatie"
+      >
         <div
           style={{
             maxWidth: "1200px",
@@ -50,8 +105,28 @@ export default function HomePage() {
             height: "64px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "1.5rem" }}>⬡</span>
+          <Link
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.625rem",
+              textDecoration: "none",
+            }}
+          >
+            <span
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "var(--gradient-brand)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <QrCodeIcon size={18} style={{ color: "#fff" }} />
+            </span>
             <span
               style={{
                 fontWeight: 800,
@@ -64,7 +139,7 @@ export default function HomePage() {
             >
               QRCodeMaster
             </span>
-          </div>
+          </Link>
           <div style={{ display: "flex", gap: "0.75rem" }}>
             <SignedOut>
               <Link href="/sign-in" className="btn btn-ghost btn-sm">
@@ -76,7 +151,7 @@ export default function HomePage() {
             </SignedOut>
             <SignedIn>
               <Link href="/dashboard" className="btn btn-primary btn-sm">
-                Dashboard →
+                Dashboard
               </Link>
             </SignedIn>
           </div>
@@ -93,22 +168,24 @@ export default function HomePage() {
         }}
         className="animate-fade-in-up"
       >
+        {/* Badge */}
         <div
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "0.5rem",
+            gap: "0.375rem",
             padding: "0.375rem 1rem",
             borderRadius: "100px",
-            background: "rgba(56,189,248,0.1)",
-            border: "1px solid rgba(56,189,248,0.2)",
+            background: "var(--color-accent-bg)",
+            border: "1px solid var(--color-accent-border)",
             fontSize: "0.8125rem",
             color: "var(--color-accent)",
             fontWeight: 600,
             marginBottom: "2rem",
           }}
         >
-          ✦ Professionele dynamische QR codes
+          <SparkleIcon size={14} />
+          Professionele dynamische QR codes
         </div>
 
         <h1
@@ -140,7 +217,7 @@ export default function HomePage() {
 
         <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
           <Link href="/sign-up" className="btn btn-primary btn-lg">
-            Start gratis →
+            Start gratis
           </Link>
           <Link href="/sign-in" className="btn btn-secondary btn-lg">
             Demo bekijken
@@ -156,13 +233,24 @@ export default function HomePage() {
             marginTop: "5rem",
           }}
         >
-          {[
-            { value: "8", label: "QR types", icon: "📦" },
-            { value: "<50ms", label: "Redirect tijd", icon: "⚡" },
-            { value: "∞", label: "Wijzigingen", icon: "🔄" },
-          ].map((stat) => (
-            <div key={stat.label} className="card" style={{ padding: "1.5rem" }}>
-              <div style={{ fontSize: "1.75rem", marginBottom: "0.25rem" }}>{stat.icon}</div>
+          {STATS.map(({ value, label, Icon }) => (
+            <div key={label} className="card" style={{ padding: "1.5rem" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "var(--radius-md)",
+                  background: "var(--color-accent-bg)",
+                  border: "1px solid var(--color-accent-border)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 0.75rem",
+                  color: "var(--color-accent)",
+                }}
+              >
+                <Icon size={18} />
+              </div>
               <div
                 style={{
                   fontSize: "2rem",
@@ -171,12 +259,13 @@ export default function HomePage() {
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
+                  marginBottom: "0.25rem",
                 }}
               >
-                {stat.value}
+                {value}
               </div>
               <div style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
-                {stat.label}
+                {label}
               </div>
             </div>
           ))}
@@ -209,45 +298,29 @@ export default function HomePage() {
             gap: "1.5rem",
           }}
         >
-          {[
-            {
-              icon: "🔗",
-              title: "Dynamische bestemmingen",
-              desc: "Wijzig de URL achter je QR code op elk moment. De gedrukte code blijft altijd hetzelfde.",
-            },
-            {
-              icon: "📊",
-              title: "Realtime analytics",
-              desc: "Zie precies wanneer, waar en op welk device mensen jouw QR code scannen.",
-            },
-            {
-              icon: "🎨",
-              title: "Volledig aanpasbaar",
-              desc: "Voeg jouw logo toe, kies kleuren en dot-stijlen. Download als SVG of PNG.",
-            },
-            {
-              icon: "📦",
-              title: "8 QR types",
-              desc: "URL, vCard, WiFi, Email, SMS, Tekst, PDF en Social — alles in één platform.",
-            },
-            {
-              icon: "⚡",
-              title: "Razendsnel",
-              desc: "Sub-50ms redirects dankzij Next.js Edge Middleware. Scanners wachten nooit.",
-            },
-            {
-              icon: "👥",
-              title: "Multi-user",
-              desc: "Meerdere gebruikers op één platform. Iedereen beheert zijn eigen QR codes.",
-            },
-          ].map((feature) => (
-            <div key={feature.title} className="card glass-hover" style={{ padding: "1.5rem" }}>
-              <div style={{ fontSize: "1.75rem", marginBottom: "0.75rem" }}>{feature.icon}</div>
+          {FEATURES.map(({ Icon, title, desc }) => (
+            <div key={title} className="card glass-hover" style={{ padding: "1.5rem" }}>
+              <div
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "var(--radius-md)",
+                  background: "var(--color-accent-bg)",
+                  border: "1px solid var(--color-accent-border)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "1rem",
+                  color: "var(--color-accent)",
+                }}
+              >
+                <Icon size={20} />
+              </div>
               <h3 style={{ fontWeight: 700, marginBottom: "0.5rem", fontSize: "1rem" }}>
-                {feature.title}
+                {title}
               </h3>
               <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", lineHeight: 1.6 }}>
-                {feature.desc}
+                {desc}
               </p>
             </div>
           ))}
@@ -259,12 +332,34 @@ export default function HomePage() {
         style={{
           borderTop: "1px solid var(--color-border)",
           padding: "2rem 1.5rem",
-          textAlign: "center",
           color: "var(--color-text-faint)",
           fontSize: "0.8125rem",
         }}
       >
-        © {new Date().getFullYear()} QRCodeMaster — Gebouwd met Next.js & Convex
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "1rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <QrCodeIcon size={14} />
+            © {new Date().getFullYear()} QRCodeMaster
+          </div>
+          <div style={{ display: "flex", gap: "1.5rem" }}>
+            <Link href="/sign-up" style={{ color: "inherit", textDecoration: "none" }}>
+              Gratis starten
+            </Link>
+            <Link href="/sign-in" style={{ color: "inherit", textDecoration: "none" }}>
+              Inloggen
+            </Link>
+          </div>
+        </div>
       </footer>
     </main>
   );

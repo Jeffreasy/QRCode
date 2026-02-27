@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -53,7 +53,9 @@
 /* ============================================
    RESET & BASE
    ============================================ */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -83,13 +85,16 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-bg);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-surface-2);
   border-radius: 100px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
 }
@@ -107,6 +112,7 @@ body {
 .glass-hover {
   transition: var(--transition);
 }
+
 .glass-hover:hover {
   background: rgba(26, 34, 50, 0.8);
   border-color: var(--color-border-active);
@@ -156,11 +162,13 @@ body {
   color: #fff;
   box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25);
 }
+
 .btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 24px rgba(56, 189, 248, 0.35);
   filter: brightness(1.1);
 }
+
 .btn-primary:active {
   transform: translateY(0);
 }
@@ -170,6 +178,7 @@ body {
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
+
 .btn-secondary:hover {
   background: var(--color-surface);
   border-color: var(--color-border-active);
@@ -180,6 +189,7 @@ body {
   color: var(--color-text-muted);
   border: 1px solid transparent;
 }
+
 .btn-ghost:hover {
   background: var(--color-surface);
   color: var(--color-text);
@@ -191,6 +201,7 @@ body {
   color: var(--color-danger);
   border: 1px solid rgba(248, 113, 113, 0.2);
 }
+
 .btn-danger:hover {
   background: rgba(248, 113, 113, 0.2);
 }
@@ -307,6 +318,7 @@ body {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -314,13 +326,25 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 16px rgba(56, 189, 248, 0.1); }
-  50% { box-shadow: 0 0 32px rgba(56, 189, 248, 0.3); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 32px rgba(56, 189, 248, 0.3);
+  }
 }
 
 @keyframes shimmer {
-  from { background-position: -200% 0; }
-  to { background-position: 200% 0; }
+  from {
+    background-position: -200% 0;
+  }
+
+  to {
+    background-position: 200% 0;
+  }
 }
 
 .animate-fade-in-up {
@@ -332,12 +356,10 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--color-surface) 25%,
-    var(--color-surface-2) 50%,
-    var(--color-surface) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-2) 50%,
+      var(--color-surface) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
@@ -389,4 +411,105 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-glow-lg);
+}
+
+/* ============================================
+   EXTRA DESIGN TOKENS (semantic)
+   ============================================ */
+:root {
+  --color-accent-bg: rgba(56, 189, 248, 0.1);
+  --color-accent-border: rgba(56, 189, 248, 0.2);
+  --color-accent-border-active: rgba(56, 189, 248, 0.4);
+  --color-success-bg: rgba(52, 211, 153, 0.1);
+  --color-success-border: rgba(52, 211, 153, 0.2);
+  --color-danger-bg: rgba(248, 113, 113, 0.1);
+  --color-danger-border: rgba(248, 113, 113, 0.2);
+  --color-muted-bg: rgba(148, 163, 184, 0.1);
+  --color-muted-border: rgba(148, 163, 184, 0.1);
+  --sidebar-width: 240px;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 39;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.sidebar-overlay.open {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    z-index: 40 !important;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: var(--sidebar-width) !important;
+  }
+
+  .dashboard-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .dashboard-main {
+    padding: 1.25rem 1rem !important;
+  }
+
+  .dashboard-grid-2col {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .mobile-header {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mobile header (hamburger bar) — hidden on desktop */
+.mobile-header {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

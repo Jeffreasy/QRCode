@@ -11,6 +11,20 @@ import QRPreview from "@/components/qr/QRPreview";
 import QRDownload from "@/components/qr/QRDownload";
 import ScanChart from "@/components/analytics/ScanChart";
 import Link from "next/link";
+import {
+    BarChartIcon,
+    SmartphoneIcon,
+    GlobeIcon,
+    LinkIcon,
+    TrashIcon,
+    CheckIcon,
+    BanIcon,
+    ZapIcon,
+    ArrowUpRightIcon,
+    ChevronRightIcon,
+    EditIcon,
+    XIcon,
+} from "@/components/ui/icons";
 
 export default function QRDetailPage() {
     const params = useParams();
@@ -45,7 +59,7 @@ export default function QRDetailPage() {
         return (
             <div style={{ padding: "2rem 2.5rem" }}>
                 <div className="skeleton" style={{ height: "40px", width: "300px", marginBottom: "2rem" }} />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem" }}>
+                <div className="dashboard-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem" }}>
                     <div className="skeleton" style={{ height: "400px", borderRadius: "var(--radius-lg)" }} />
                     <div className="skeleton" style={{ height: "400px", borderRadius: "var(--radius-lg)" }} />
                 </div>
@@ -71,10 +85,10 @@ export default function QRDetailPage() {
     const redirectUrl = `${siteUrl}/r/${qrCode.slug}`;
 
     async function handleSaveDest() {
-        if (!user || !newDest.trim()) return;
+        if (!newDest.trim()) return;
         setIsSaving(true);
         try {
-            await updateDest({ id: qrId, userId: user.id, destination: newDest.trim() });
+            await updateDest({ id: qrId, destination: newDest.trim() });
             setEditingDest(false);
         } finally {
             setIsSaving(false);
@@ -82,30 +96,47 @@ export default function QRDetailPage() {
     }
 
     async function handleToggle() {
-        if (!user) return;
-        await toggleActive({ id: qrId, userId: user.id });
+        await toggleActive({ id: qrId });
     }
 
     async function handleDelete() {
-        if (!user || !confirm(`Weet je zeker dat je '${qrCode!.title}' wil verwijderen?`)) return;
-        await deleteQR({ id: qrId, userId: user.id });
+        if (!confirm(`Weet je zeker dat je '${qrCode!.title}' wil verwijderen?`)) return;
+        await deleteQR({ id: qrId });
         router.push("/dashboard");
     }
 
+    const DETAIL_STATS = [
+        { label: "Totale scans", value: qrCode.totalScans, Icon: BarChartIcon },
+        { label: "Unieke apparaten", value: scanStats ? Object.keys(scanStats.deviceBreakdown).length : "-", Icon: SmartphoneIcon },
+        { label: "Landen bereikt", value: scanStats ? Object.keys(scanStats.countryBreakdown).filter(c => c !== "Unknown").length : "-", Icon: GlobeIcon },
+    ];
+
     return (
-        <div style={{ padding: "2rem 2.5rem" }}>
+        <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
             {/* Breadcrumb */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
-                <Link href="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>Dashboard</Link>
-                <span>/</span>
+            <nav
+                aria-label="Broodkruimelpad"
+                style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}
+            >
+                <Link
+                    href="/dashboard"
+                    style={{ color: "inherit", textDecoration: "none", transition: "color 0.15s ease" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-text)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-text-muted)")}
+                >
+                    Dashboard
+                </Link>
+                <ChevronRightIcon size={14} />
                 <span style={{ color: "var(--color-text)" }}>{qrCode.title}</span>
-            </div>
+            </nav>
 
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.375rem" }}>
-                        <span style={{ fontSize: "1.5rem" }}>{typeMeta?.icon}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.375rem", flexWrap: "wrap" }}>
+                        {typeMeta?.icon && (
+                            <span style={{ fontSize: "1.5rem" }}>{typeMeta.icon}</span>
+                        )}
                         <h1 style={{ fontSize: "1.75rem", fontWeight: 800 }}>{qrCode.title}</h1>
                         <span
                             style={{
@@ -116,9 +147,9 @@ export default function QRDetailPage() {
                                 borderRadius: "100px",
                                 fontSize: "0.75rem",
                                 fontWeight: 600,
-                                background: qrCode.isActive ? "rgba(52,211,153,0.1)" : "rgba(148,163,184,0.1)",
+                                background: qrCode.isActive ? "var(--color-success-bg)" : "var(--color-muted-bg)",
                                 color: qrCode.isActive ? "var(--color-success)" : "var(--color-text-muted)",
-                                border: `1px solid ${qrCode.isActive ? "rgba(52,211,153,0.2)" : "rgba(148,163,184,0.1)"}`,
+                                border: `1px solid ${qrCode.isActive ? "var(--color-success-border)" : "var(--color-muted-border)"}`,
                             }}
                         >
                             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
@@ -130,31 +161,52 @@ export default function QRDetailPage() {
                     </p>
                 </div>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
-                    <button className="btn btn-secondary btn-sm" onClick={handleToggle}>
-                        {qrCode.isActive ? "⊘ Deactiveren" : "✓ Activeren"}
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleToggle}
+                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                    >
+                        {qrCode.isActive ? <BanIcon size={14} /> : <CheckIcon size={14} />}
+                        {qrCode.isActive ? "Deactiveren" : "Activeren"}
                     </button>
-                    <button className="btn btn-danger btn-sm" onClick={handleDelete}>
-                        🗑 Verwijderen
+                    <button
+                        className="btn btn-danger btn-sm"
+                        onClick={handleDelete}
+                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                    >
+                        <TrashIcon size={14} />
+                        Verwijderen
                     </button>
                 </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", alignItems: "start" }}>
+            <div className="dashboard-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", alignItems: "start" }}>
                 {/* Left column */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                     {/* Stats */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
-                        {[
-                            { label: "Totale scans", value: qrCode.totalScans, icon: "📊" },
-                            { label: "Unieke apparaten", value: scanStats ? Object.keys(scanStats.deviceBreakdown).length : "-", icon: "📱" },
-                            { label: "Landen bereikt", value: scanStats ? Object.keys(scanStats.countryBreakdown).filter(c => c !== "Unknown").length : "-", icon: "🌍" },
-                        ].map((stat) => (
-                            <div key={stat.label} className="card" style={{ padding: "1.25rem", textAlign: "center" }}>
-                                <div style={{ fontSize: "1.5rem", marginBottom: "0.25rem" }}>{stat.icon}</div>
-                                <div style={{ fontSize: "1.75rem", fontWeight: 800, background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                                    {stat.value}
+                    <div className="dashboard-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
+                        {DETAIL_STATS.map(({ label, value, Icon }) => (
+                            <div key={label} className="card" style={{ padding: "1.25rem", textAlign: "center" }}>
+                                <div
+                                    style={{
+                                        width: "40px",
+                                        height: "40px",
+                                        borderRadius: "var(--radius-md)",
+                                        background: "var(--color-accent-bg)",
+                                        border: "1px solid var(--color-accent-border)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        margin: "0 auto 0.75rem",
+                                        color: "var(--color-accent)",
+                                    }}
+                                >
+                                    <Icon size={18} />
                                 </div>
-                                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{stat.label}</div>
+                                <div style={{ fontSize: "1.75rem", fontWeight: 800, background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                                    {value}
+                                </div>
+                                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{label}</div>
                             </div>
                         ))}
                     </div>
@@ -173,12 +225,17 @@ export default function QRDetailPage() {
                     {/* Destination editor */}
                     <div className="card" style={{ padding: "1.5rem" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                            <h3 style={{ fontWeight: 700 }}>🔗 Bestemming</h3>
+                            <h3 style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <LinkIcon size={16} style={{ color: "var(--color-text-muted)" }} />
+                                Bestemming
+                            </h3>
                             {!editingDest && (
                                 <button
                                     className="btn btn-secondary btn-sm"
                                     onClick={() => { setNewDest(qrCode.destination); setEditingDest(true); }}
+                                    style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
                                 >
+                                    <EditIcon size={13} />
                                     Wijzigen
                                 </button>
                             )}
@@ -194,15 +251,27 @@ export default function QRDetailPage() {
                                     autoFocus
                                 />
                                 <div style={{ display: "flex", gap: "0.75rem" }}>
-                                    <button className="btn btn-primary btn-sm" onClick={handleSaveDest} disabled={isSaving}>
-                                        {isSaving ? "Opslaan..." : "✓ Opslaan"}
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={handleSaveDest}
+                                        disabled={isSaving}
+                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                                    >
+                                        <CheckIcon size={14} />
+                                        {isSaving ? "Opslaan..." : "Opslaan"}
                                     </button>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingDest(false)}>
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => setEditingDest(false)}
+                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                                    >
+                                        <XIcon size={14} />
                                         Annuleren
                                     </button>
                                 </div>
-                                <p style={{ fontSize: "0.75rem", color: "var(--color-accent)" }}>
-                                    ⚡ De QR code zelf verandert niet — alleen de bestemming.
+                                <p style={{ fontSize: "0.75rem", color: "var(--color-accent)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                    <ZapIcon size={12} />
+                                    De QR code zelf verandert niet — alleen de bestemming.
                                 </p>
                             </div>
                         ) : (
@@ -225,16 +294,16 @@ export default function QRDetailPage() {
                             size={220}
                             logoUrl={qrCode.customization?.logoUrl}
                         />
-                        {/* Show where this QR redirects — the important info */}
-                        <div style={{ marginTop: "1rem", padding: "0.625rem 0.875rem", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: "var(--radius-md)" }}>
-                            <div style={{ fontSize: "0.7rem", color: "var(--color-success)", fontWeight: 600, marginBottom: "0.25rem" }}>
-                                ↗ Scannen stuurt door naar:
+                        {/* Redirect destination info */}
+                        <div style={{ marginTop: "1rem", padding: "0.625rem 0.875rem", background: "var(--color-success-bg)", border: "1px solid var(--color-success-border)", borderRadius: "var(--radius-md)" }}>
+                            <div style={{ fontSize: "0.7rem", color: "var(--color-success)", fontWeight: 600, marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                <ArrowUpRightIcon size={11} />
+                                Scannen stuurt door naar:
                             </div>
                             <div style={{ fontSize: "0.75rem", color: "var(--color-text)", fontFamily: "monospace", wordBreak: "break-all" }}>
                                 {qrCode.destination}
                             </div>
                         </div>
-                        {/* Technical redirect URL — smaller, secondary info */}
                         <p style={{ marginTop: "0.5rem", fontSize: "0.65rem", color: "var(--color-text-faint)", fontFamily: "monospace" }}>
                             via {redirectUrl}
                         </p>

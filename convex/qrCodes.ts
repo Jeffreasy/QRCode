@@ -7,10 +7,18 @@ const generateSlug = customAlphabet(
     6
 );
 
+function validateUrl(destination: string, type: string): void {
+    if (type !== "url" && type !== "file" && type !== "social") return;
+    const trimmed = destination.trim();
+    if (!trimmed) throw new Error("Destination URL mag niet leeg zijn.");
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+        throw new Error("URL moet beginnen met http:// of https://");
+    }
+}
+
 // Create a new QR code
 export const createQRCode = mutation({
     args: {
-        userId: v.string(),
         type: v.union(
             v.literal("url"),
             v.literal("vcard"),
@@ -34,6 +42,12 @@ export const createQRCode = mutation({
         ),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
+        validateUrl(args.destination, args.type);
+
         // Generate a unique slug
         let slug = generateSlug();
         let existing = await ctx.db
@@ -52,10 +66,10 @@ export const createQRCode = mutation({
 
         const now = Date.now();
         const id = await ctx.db.insert("qr_codes", {
-            userId: args.userId,
+            userId,
             slug,
             type: args.type,
-            destination: args.destination,
+            destination: args.destination.trim(),
             title: args.title,
             isActive: true,
             customization: args.customization ?? {},
@@ -72,16 +86,20 @@ export const createQRCode = mutation({
 export const updateDestination = mutation({
     args: {
         id: v.id("qr_codes"),
-        userId: v.string(),
         destination: v.string(),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
         const qrCode = await ctx.db.get(args.id);
-        if (!qrCode || qrCode.userId !== args.userId) {
+        if (!qrCode || qrCode.userId !== userId) {
             throw new Error("QR code not found or access denied");
         }
+        validateUrl(args.destination, qrCode.type);
         await ctx.db.patch(args.id, {
-            destination: args.destination,
+            destination: args.destination.trim(),
             updatedAt: Date.now(),
         });
     },
@@ -91,12 +109,15 @@ export const updateDestination = mutation({
 export const updateTitle = mutation({
     args: {
         id: v.id("qr_codes"),
-        userId: v.string(),
         title: v.string(),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
         const qrCode = await ctx.db.get(args.id);
-        if (!qrCode || qrCode.userId !== args.userId) {
+        if (!qrCode || qrCode.userId !== userId) {
             throw new Error("QR code not found or access denied");
         }
         await ctx.db.patch(args.id, { title: args.title, updatedAt: Date.now() });
@@ -107,7 +128,6 @@ export const updateTitle = mutation({
 export const updateCustomization = mutation({
     args: {
         id: v.id("qr_codes"),
-        userId: v.string(),
         customization: v.object({
             fgColor: v.optional(v.string()),
             bgColor: v.optional(v.string()),
@@ -117,8 +137,12 @@ export const updateCustomization = mutation({
         }),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
         const qrCode = await ctx.db.get(args.id);
-        if (!qrCode || qrCode.userId !== args.userId) {
+        if (!qrCode || qrCode.userId !== userId) {
             throw new Error("QR code not found or access denied");
         }
         await ctx.db.patch(args.id, {
@@ -132,11 +156,14 @@ export const updateCustomization = mutation({
 export const toggleActive = mutation({
     args: {
         id: v.id("qr_codes"),
-        userId: v.string(),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
         const qrCode = await ctx.db.get(args.id);
-        if (!qrCode || qrCode.userId !== args.userId) {
+        if (!qrCode || qrCode.userId !== userId) {
             throw new Error("QR code not found or access denied");
         }
         await ctx.db.patch(args.id, {
@@ -150,11 +177,14 @@ export const toggleActive = mutation({
 export const deleteQRCode = mutation({
     args: {
         id: v.id("qr_codes"),
-        userId: v.string(),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
         const qrCode = await ctx.db.get(args.id);
-        if (!qrCode || qrCode.userId !== args.userId) {
+        if (!qrCode || qrCode.userId !== userId) {
             throw new Error("QR code not found or access denied");
         }
         // Delete all scan events for this QR code
