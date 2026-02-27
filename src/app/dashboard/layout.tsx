@@ -215,8 +215,10 @@ export default function DashboardLayout({
                         QRCodeMaster
                     </span>
 
-                    {/* Spacer to center logo */}
-                    <div style={{ width: "44px" }} aria-hidden="true" />
+                    {/* UserButton — always accessible on mobile without opening sidebar */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", width: "44px" }}>
+                        <UserButton />
+                    </div>
                 </header>
 
                 <main style={{ flex: 1, overflow: "auto" }} id="main-content">
