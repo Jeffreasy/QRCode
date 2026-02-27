@@ -57,14 +57,15 @@ export async function POST(req: NextRequest) {
                 args: {
                     qrCodeId,
                     userId,
-                    country: country ?? null,
-                    city: city ?? null,
                     device: deviceType,
-                    browser: browser.name ?? null,
-                    os: os.name ?? null,
+                    ...(browser.name ? { browser: browser.name } : {}),
+                    ...(os.name ? { os: os.name } : {}),
+                    ...(country ? { country } : {}),
+                    ...(city ? { city } : {}),
                 },
             }),
         });
+
 
         if (!mutRes.ok) {
             const text = await mutRes.text();

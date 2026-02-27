@@ -87,14 +87,15 @@ export async function GET(
                 args: {
                     qrCodeId: qrCode._id,
                     userId: qrCode.userId,
-                    country,
-                    city,
                     device: deviceType,
-                    browser: browser.name ?? null,
-                    os: os.name ?? null,
+                    ...(browser.name ? { browser: browser.name } : {}),
+                    ...(os.name ? { os: os.name } : {}),
+                    ...(country ? { country } : {}),
+                    ...(city ? { city } : {}),
                 },
             }),
         }).catch((err) => console.error("[QR Redirect] Scan log failed:", err));
+
 
         // HTTP 302 redirect — fast, standard, works everywhere
         return NextResponse.redirect(redirectUrl, { status: 302 });
