@@ -40,6 +40,14 @@ export default function CreateQRPage() {
             })()
             : "";
 
+    // For dynamic types the actual QR encodes the redirect URL, not the raw destination.
+    // Show the correct format in the preview so it matches the saved QR.
+    const isDynamic = selectedType ? ["url", "file", "social"].includes(selectedType) : false;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? (typeof window !== "undefined" ? window.location.origin : "");
+    const previewValue = isDynamic && computedDestination
+        ? `${siteUrl}/r/xxxxxx`
+        : computedDestination || `${siteUrl}`;
+
     async function handleCreate() {
         if (!user || !selectedType) return;
         setIsLoading(true);
@@ -416,7 +424,7 @@ export default function CreateQRPage() {
                             Live preview
                         </div>
                         <QRPreview
-                            value={computedDestination || "https://qrcodemaster.app"}
+                            value={previewValue}
                             fgColor={customization.fgColor}
                             bgColor={customization.bgColor}
                             dotStyle={customization.dotStyle}
@@ -426,18 +434,24 @@ export default function CreateQRPage() {
                             size={220}
                         />
                         {computedDestination && (
-                            <p
-                                style={{
-                                    marginTop: "1rem",
-                                    fontSize: "0.75rem",
-                                    color: "var(--color-text-faint)",
-                                    fontFamily: "monospace",
-                                    wordBreak: "break-all",
-                                }}
-                            >
-                                {computedDestination.slice(0, 60)}
-                                {computedDestination.length > 60 ? "..." : ""}
-                            </p>
+                            <div style={{ marginTop: "0.875rem" }}>
+                                {isDynamic && (
+                                    <p style={{ fontSize: "0.7rem", color: "var(--color-accent)", marginBottom: "0.25rem", fontWeight: 600 }}>
+                                        ⚡ Dynamisch — unieke slug na opslaan
+                                    </p>
+                                )}
+                                <p
+                                    style={{
+                                        fontSize: "0.7rem",
+                                        color: "var(--color-text-faint)",
+                                        fontFamily: "monospace",
+                                        wordBreak: "break-all",
+                                    }}
+                                >
+                                    {isDynamic ? `${siteUrl}/r/` : computedDestination.slice(0, 50)}
+                                    {isDynamic ? <strong style={{ color: "var(--color-text-muted)" }}>AbCd3F</strong> : (computedDestination.length > 50 ? "..." : "")}
+                                </p>
+                            </div>
                         )}
                     </div>
                 </div>
