@@ -144,7 +144,7 @@ export default function DashboardLayout({
                         gap: "0.75rem",
                     }}
                 >
-                    <UserButton afterSignOutUrl="/" />
+                    <UserButton />
                     <span style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
                         Account
                     </span>

@@ -500,6 +500,98 @@ body {
 }
 
 /* ============================================
+   HOMEPAGE LAYOUT
+   ============================================ */
+
+/* Hero section */
+.hero-section {
+  padding: 6rem 1.5rem 4rem;
+}
+
+/* Features section */
+.features-section {
+  padding: 3rem 1.5rem 6rem;
+}
+
+/* Stats grid — responsive: 3-col on tablet+, 1-col on mobile */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 4rem;
+}
+
+/* CTA button group */
+.hero-cta-group {
+  display: flex;
+  gap: 0.875rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Footer hover effect */
+.footer-link:hover {
+  color: var(--color-text-muted);
+  transition: var(--transition);
+}
+
+/* ============================================
+   HOMEPAGE RESPONSIVE — TABLET (≤768px)
+   ============================================ */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 4rem 1.25rem 3rem;
+  }
+
+  .features-section {
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  /* Stats switches to single column on small tablet / large phone */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 3rem;
+  }
+}
+
+/* ============================================
+   HOMEPAGE RESPONSIVE — MOBILE (≤480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .hero-section {
+    padding: 2.5rem 1rem 2rem;
+  }
+
+  .features-section {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+  }
+
+  .hero-cta-group .btn {
+    width: 100%;
+  }
+
+  .stats-grid {
+    max-width: 100%;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  /* Hide brand name on very small screens (keep logo icon) */
+  .nav-brand-text {
+    display: none;
+  }
+}
+
+/* ============================================
    REDUCED MOTION
    ============================================ */
 @media (prefers-reduced-motion: reduce) {

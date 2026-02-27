@@ -98,11 +98,12 @@ export default function HomePage() {
           style={{
             maxWidth: "1200px",
             margin: "0 auto",
-            padding: "0 1.5rem",
+            padding: "0 1rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "64px",
+            height: "60px",
+            gap: "0.5rem",
           }}
         >
           <Link
@@ -110,14 +111,16 @@ export default function HomePage() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "0.625rem",
+              gap: "0.5rem",
               textDecoration: "none",
+              flexShrink: 0,
             }}
           >
             <span
               style={{
                 width: "32px",
                 height: "32px",
+                minWidth: "32px",
                 borderRadius: "8px",
                 background: "var(--gradient-brand)",
                 display: "flex",
@@ -128,25 +131,28 @@ export default function HomePage() {
               <QrCodeIcon size={18} style={{ color: "#fff" }} />
             </span>
             <span
+              className="nav-brand-text"
               style={{
                 fontWeight: 800,
-                fontSize: "1.125rem",
+                fontSize: "1rem",
                 background: "var(--gradient-brand)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
+                whiteSpace: "nowrap",
               }}
             >
               QRCodeMaster
             </span>
           </Link>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
             <SignedOut>
               <Link href="/sign-in" className="btn btn-ghost btn-sm">
                 Inloggen
               </Link>
               <Link href="/sign-up" className="btn btn-primary btn-sm">
-                Gratis starten
+                <span className="nav-cta-text">Gratis starten</span>
+                <span className="nav-cta-short" style={{ display: "none" }}>Start</span>
               </Link>
             </SignedOut>
             <SignedIn>
@@ -160,13 +166,12 @@ export default function HomePage() {
 
       {/* Hero section */}
       <section
+        className="hero-section animate-fade-in-up"
         style={{
           maxWidth: "900px",
           margin: "0 auto",
-          padding: "8rem 1.5rem 6rem",
           textAlign: "center",
         }}
-        className="animate-fade-in-up"
       >
         {/* Badge */}
         <div
@@ -181,7 +186,7 @@ export default function HomePage() {
             fontSize: "0.8125rem",
             color: "var(--color-accent)",
             fontWeight: 600,
-            marginBottom: "2rem",
+            marginBottom: "1.5rem",
           }}
         >
           <SparkleIcon size={14} />
@@ -190,10 +195,10 @@ export default function HomePage() {
 
         <h1
           style={{
-            fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+            fontSize: "clamp(2rem, 6vw, 4.5rem)",
             fontWeight: 900,
             lineHeight: 1.1,
-            marginBottom: "1.5rem",
+            marginBottom: "1.25rem",
             letterSpacing: "-0.02em",
           }}
         >
@@ -204,10 +209,10 @@ export default function HomePage() {
 
         <p
           style={{
-            fontSize: "1.125rem",
+            fontSize: "clamp(0.9375rem, 2.5vw, 1.125rem)",
             color: "var(--color-text-muted)",
             maxWidth: "560px",
-            margin: "0 auto 2.5rem",
+            margin: "0 auto 2rem",
             lineHeight: 1.7,
           }}
         >
@@ -215,7 +220,7 @@ export default function HomePage() {
           Volg scans in realtime, analyseer je publiek en download in hoge kwaliteit.
         </p>
 
-        <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <div className="hero-cta-group">
           <Link href="/sign-up" className="btn btn-primary btn-lg">
             Start gratis
           </Link>
@@ -225,16 +230,9 @@ export default function HomePage() {
         </div>
 
         {/* Stats */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "1.5rem",
-            marginTop: "5rem",
-          }}
-        >
+        <div className="stats-grid">
           {STATS.map(({ value, label, Icon }) => (
-            <div key={label} className="card" style={{ padding: "1.5rem" }}>
+            <div key={label} className="card" style={{ padding: "1.25rem 1rem" }}>
               <div
                 style={{
                   width: "40px",
@@ -253,7 +251,7 @@ export default function HomePage() {
               </div>
               <div
                 style={{
-                  fontSize: "2rem",
+                  fontSize: "clamp(1.5rem, 4vw, 2rem)",
                   fontWeight: 800,
                   background: "var(--gradient-brand)",
                   WebkitBackgroundClip: "text",
@@ -264,7 +262,7 @@ export default function HomePage() {
               >
                 {value}
               </div>
-              <div style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+              <div style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
                 {label}
               </div>
             </div>
@@ -274,18 +272,18 @@ export default function HomePage() {
 
       {/* Features section */}
       <section
+        className="features-section"
         style={{
           maxWidth: "1100px",
           margin: "0 auto",
-          padding: "4rem 1.5rem 8rem",
         }}
       >
         <h2
           style={{
             textAlign: "center",
-            fontSize: "2rem",
+            fontSize: "clamp(1.5rem, 4vw, 2rem)",
             fontWeight: 800,
-            marginBottom: "3rem",
+            marginBottom: "2.5rem",
             letterSpacing: "-0.01em",
           }}
         >
@@ -294,32 +292,33 @@ export default function HomePage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "1.5rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+            gap: "1.25rem",
           }}
         >
           {FEATURES.map(({ Icon, title, desc }) => (
-            <div key={title} className="card glass-hover" style={{ padding: "1.5rem" }}>
+            <div key={title} className="card glass-hover" style={{ padding: "1.25rem" }}>
               <div
                 style={{
-                  width: "44px",
-                  height: "44px",
+                  width: "40px",
+                  height: "40px",
                   borderRadius: "var(--radius-md)",
                   background: "var(--color-accent-bg)",
                   border: "1px solid var(--color-accent-border)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: "1rem",
+                  marginBottom: "0.875rem",
                   color: "var(--color-accent)",
+                  flexShrink: 0,
                 }}
               >
                 <Icon size={20} />
               </div>
-              <h3 style={{ fontWeight: 700, marginBottom: "0.5rem", fontSize: "1rem" }}>
+              <h3 style={{ fontWeight: 700, marginBottom: "0.375rem", fontSize: "0.9375rem" }}>
                 {title}
               </h3>
-              <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+              <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", lineHeight: 1.6, margin: 0 }}>
                 {desc}
               </p>
             </div>
@@ -331,7 +330,7 @@ export default function HomePage() {
       <footer
         style={{
           borderTop: "1px solid var(--color-border)",
-          padding: "2rem 1.5rem",
+          padding: "1.5rem 1rem",
           color: "var(--color-text-faint)",
           fontSize: "0.8125rem",
         }}
@@ -344,18 +343,26 @@ export default function HomePage() {
             justifyContent: "space-between",
             alignItems: "center",
             flexWrap: "wrap",
-            gap: "1rem",
+            gap: "0.75rem",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <QrCodeIcon size={14} />
-            © {new Date().getFullYear()} QRCodeMaster
+            <span>© {new Date().getFullYear()} QRCodeMaster</span>
           </div>
-          <div style={{ display: "flex", gap: "1.5rem" }}>
-            <Link href="/sign-up" style={{ color: "inherit", textDecoration: "none" }}>
+          <div style={{ display: "flex", gap: "1.25rem" }}>
+            <Link
+              href="/sign-up"
+              style={{ color: "inherit", textDecoration: "none" }}
+              className="footer-link"
+            >
               Gratis starten
             </Link>
-            <Link href="/sign-in" style={{ color: "inherit", textDecoration: "none" }}>
+            <Link
+              href="/sign-in"
+              style={{ color: "inherit", textDecoration: "none" }}
+              className="footer-link"
+            >
               Inloggen
             </Link>
           </div>
