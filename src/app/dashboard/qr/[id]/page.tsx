@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { QR_TYPE_META } from "@/lib/qr-types";
@@ -11,113 +10,35 @@ import QRDownload from "@/components/qr/QRDownload";
 import ScanChart from "@/components/analytics/ScanChart";
 import Link from "next/link";
 import {
-    BarChartIcon,
-    SmartphoneIcon,
-    GlobeIcon,
-    LinkIcon,
-    TrashIcon,
-    CheckIcon,
-    BanIcon,
-    ZapIcon,
-    ArrowUpRightIcon,
-    ChevronRightIcon,
-    EditIcon,
-    XIcon,
-    CopyIcon,
-    DownloadIcon,
+    BarChartIcon, SmartphoneIcon, GlobeIcon, LinkIcon,
+    TrashIcon, CheckIcon, BanIcon, ZapIcon, ArrowUpRightIcon,
+    ChevronRightIcon, EditIcon, XIcon, CopyIcon, BrowserIcon,
 } from "@/components/ui/icons";
-
-// Browser icon (not in icons.tsx yet — inline for now)
-function BrowserIcon({ size = 16 }: { size?: number }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-    );
-}
-
-
-
-const DOT_STYLES = [
-    { value: "square", label: "Vierkant" },
-    { value: "rounded", label: "Afgerond" },
-    { value: "dots", label: "Dots" },
-    { value: "classy", label: "Classy" },
-    { value: "classy-rounded", label: "Classy Rond" },
-];
+import { useDesignDraft } from "./_hooks/useDesignDraft";
+import { useQRDetailActions } from "./_hooks/useQRDetailActions";
+import { DesignEditPanel } from "./_components/DesignEditPanel";
+import { BreakdownCard } from "./_components/BreakdownCard";
+import { RecentScansFeed } from "./_components/RecentScansFeed";
 
 export default function QRDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const [editingDest, setEditingDest] = useState(false);
-    const [newDest, setNewDest] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-    const [copied, setCopied] = useState(false);
-
-    // Inline title editing
-    const [editingTitle, setEditingTitle] = useState(false);
-    const [newTitle, setNewTitle] = useState("");
-    const [isSavingTitle, setIsSavingTitle] = useState(false);
-
-    // Duplicate state
-    const [isDuplicating, setIsDuplicating] = useState(false);
-
-    // Design edit state
-    const [editingDesign, setEditingDesign] = useState(false);
-    const [isSavingDesign, setIsSavingDesign] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [designDraft, setDesignDraft] = useState<{
-        fgColor: string;
-        bgColor: string;
-        dotStyle: string;
-        cornerColor: string;
-        cornerSquareType: string;
-        cornerDotType: string;
-        qrShape: "square" | "circle";
-        backgroundRound: number;
-        errorCorrectionLevel: string;
-        logoUrl: string;
-        borderEnabled: boolean;
-        borderColor: string;
-        borderWidth: number;
-        borderRadius: number;
-        logoSize: number;
-        logoMargin: number;
-        logoHideDots: boolean;
-    } | null>(null);
-
     const qrId = params.id as Id<"qr_codes">;
 
-    const qrCode = useQuery(
-        api.qrCodes.getById,
-        { id: qrId }
-    );
+    // ── Queries ──────────────────────────────────────────────────────────────
+    const qrCode = useQuery(api.qrCodes.getById, { id: qrId });
+    const scanStats = useQuery(api.analytics.getScanStats, { qrCodeId: qrId });
+    const scansByDay = useQuery(api.analytics.getScansByDay, { qrCodeId: qrId, days: 30 });
+    const recentScans = useQuery(api.analytics.getRecentScans, { qrCodeId: qrId, limit: 10 });
 
-    const scanStats = useQuery(
-        api.analytics.getScanStats,
-        { qrCodeId: qrId }
-    );
+    // ── Hooks ─────────────────────────────────────────────────────────────────
+    const design = useDesignDraft(qrId);
+    const actions = useQRDetailActions(qrId, recentScans, qrCode ?? null);
 
-    const scansByDay = useQuery(
-        api.analytics.getScansByDay,
-        { qrCodeId: qrId, days: 30 }
-    );
+    // Suppress unused router warning
+    void router;
 
-    const updateDest = useMutation(api.qrCodes.updateDestination);
-    const toggleActive = useMutation(api.qrCodes.toggleActive);
-    const deleteQR = useMutation(api.qrCodes.deleteQRCode);
-    const updateCustomization = useMutation(api.qrCodes.updateCustomization);
-    const updateTitle = useMutation(api.qrCodes.updateTitle);
-    const duplicateQR = useMutation(api.qrCodes.duplicateQRCode);
-
-    // Recent scans feed (last 10)
-    const recentScans = useQuery(
-        api.analytics.getRecentScans,
-        { qrCodeId: qrId, limit: 10 }
-    );
-
+    // ── Loading / not found states ────────────────────────────────────────────
     if (qrCode === undefined) {
         return (
             <div style={{ padding: "2rem 2.5rem" }}>
@@ -141,146 +62,13 @@ export default function QRDetailPage() {
         );
     }
 
+    // ── Derived values ────────────────────────────────────────────────────────
     const typeMeta = QR_TYPE_META[qrCode.type as keyof typeof QR_TYPE_META];
-
     const clientOrigin = typeof window !== "undefined" ? window.location.origin : "";
-    const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-    const siteUrl = clientOrigin || envSiteUrl || "https://www.jeffdash.com";
-
+    const siteUrl = clientOrigin || process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.jeffdash.com";
     const redirectUrl = `${siteUrl}/r/${qrCode.slug}`;
 
-    async function handleSaveDest() {
-        if (!newDest.trim()) return;
-        setIsSaving(true);
-        try {
-            await updateDest({ id: qrId, destination: newDest.trim() });
-            setEditingDest(false);
-        } finally {
-            setIsSaving(false);
-        }
-    }
-
-    async function handleToggle() {
-        await toggleActive({ id: qrId });
-    }
-
-    async function handleDelete() {
-        setIsDeleting(true);
-        try {
-            await deleteQR({ id: qrId });
-            router.push("/dashboard");
-        } finally {
-            setIsDeleting(false);
-            setShowDeleteConfirm(false);
-        }
-    }
-
-    function handleCopyUrl() {
-        navigator.clipboard.writeText(redirectUrl).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
-    }
-
-    async function handleSaveTitle() {
-        if (!newTitle.trim()) return;
-        setIsSavingTitle(true);
-        try {
-            await updateTitle({ id: qrId, title: newTitle.trim() });
-            setEditingTitle(false);
-        } finally {
-            setIsSavingTitle(false);
-        }
-    }
-
-    async function handleDuplicate() {
-        setIsDuplicating(true);
-        try {
-            const result = await duplicateQR({ id: qrId });
-            router.push(`/dashboard/qr/${result.id}`);
-        } finally {
-            setIsDuplicating(false);
-        }
-    }
-
-    function handleExportCSV() {
-        if (!recentScans || recentScans.length === 0) return;
-        const header = "Tijdstip,Land,Stad,Apparaat,Browser,OS";
-        const rows = recentScans.map((s) => [
-            new Date(s.scannedAt).toISOString(),
-            s.country ?? "",
-            s.city ?? "",
-            s.device ?? "",
-            s.browser ?? "",
-            s.os ?? "",
-        ].map(v => `"${v}"`).join(","));
-        const csv = [header, ...rows].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `scans_${qrCode!.slug}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    function openDesignEdit() {
-        setDesignDraft({
-            fgColor: qrCode!.customization?.fgColor ?? "#000000",
-            bgColor: qrCode!.customization?.bgColor ?? "#ffffff",
-            dotStyle: qrCode!.customization?.dotStyle ?? "square",
-            cornerColor: qrCode!.customization?.cornerColor ?? "",
-            cornerSquareType: qrCode!.customization?.cornerSquareType ?? "",
-            cornerDotType: qrCode!.customization?.cornerDotType ?? "",
-            qrShape: (qrCode!.customization?.qrShape as "square" | "circle") ?? "square",
-            backgroundRound: qrCode!.customization?.backgroundRound ?? 0,
-            errorCorrectionLevel: qrCode!.customization?.errorCorrectionLevel ?? "M",
-            logoUrl: qrCode!.customization?.logoUrl ?? "",
-            borderEnabled: qrCode!.customization?.borderEnabled ?? false,
-            borderColor: qrCode!.customization?.borderColor ?? "#38bdf8",
-            borderWidth: qrCode!.customization?.borderWidth ?? 4,
-            borderRadius: qrCode!.customization?.borderRadius ?? 16,
-            logoSize: qrCode!.customization?.logoSize ?? 0.35,
-            logoMargin: qrCode!.customization?.logoMargin ?? 4,
-            logoHideDots: qrCode!.customization?.logoHideDots ?? true,
-        });
-        setEditingDesign(true);
-    }
-
-    async function handleSaveDesign() {
-        if (!designDraft) return;
-        setIsSavingDesign(true);
-        try {
-            await updateCustomization({
-                id: qrId,
-                customization: {
-                    fgColor: designDraft.fgColor,
-                    bgColor: designDraft.bgColor,
-                    dotStyle: designDraft.dotStyle as "square" | "rounded" | "dots" | "classy" | "classy-rounded" | "extra-rounded",
-                    cornerColor: designDraft.cornerColor || undefined,
-                    cornerSquareType: (designDraft.cornerSquareType || undefined) as "square" | "dot" | "extra-rounded" | undefined,
-                    cornerDotType: (designDraft.cornerDotType || undefined) as "square" | "dot" | undefined,
-                    qrShape: designDraft.qrShape,
-                    backgroundRound: designDraft.backgroundRound,
-                    errorCorrectionLevel: designDraft.errorCorrectionLevel,
-                    logoUrl: designDraft.logoUrl || undefined,
-                    borderEnabled: designDraft.borderEnabled,
-                    borderColor: designDraft.borderColor,
-                    borderWidth: designDraft.borderWidth,
-                    borderRadius: designDraft.borderRadius,
-                    logoSize: designDraft.logoSize,
-                    logoMargin: designDraft.logoMargin,
-                    logoHideDots: designDraft.logoHideDots,
-                },
-            });
-            setEditingDesign(false);
-        } finally {
-            setIsSavingDesign(false);
-        }
-    }
-
-    // Active customization — use draft values if editing for live preview
-    const activeCustom = editingDesign && designDraft ? designDraft : {
+    const activeCustom = design.editingDesign && design.designDraft ? design.designDraft : {
         fgColor: qrCode.customization?.fgColor ?? "#000000",
         bgColor: qrCode.customization?.bgColor ?? "#ffffff",
         dotStyle: qrCode.customization?.dotStyle ?? "square",
@@ -309,16 +97,8 @@ export default function QRDetailPage() {
     return (
         <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
             {/* Breadcrumb */}
-            <nav
-                aria-label="Broodkruimelpad"
-                style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}
-            >
-                <Link
-                    href="/dashboard"
-                    className="breadcrumb-link"
-                >
-                    Dashboard
-                </Link>
+            <nav aria-label="Broodkruimelpad" style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+                <Link href="/dashboard" className="breadcrumb-link">Dashboard</Link>
                 <ChevronRightIcon size={14} />
                 <span style={{ color: "var(--color-text)" }}>{qrCode.title}</span>
             </nav>
@@ -327,111 +107,74 @@ export default function QRDetailPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.375rem", flexWrap: "wrap" }}>
-                        {typeMeta?.icon && (
-                            <span style={{ fontSize: "1.5rem" }}>{typeMeta.icon}</span>
-                        )}
+                        {typeMeta?.icon && <span style={{ fontSize: "1.5rem" }}>{typeMeta.icon}</span>}
+
                         {/* Inline title edit */}
-                        {editingTitle ? (
+                        {actions.editingTitle ? (
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <input
-                                    className="input"
-                                    value={newTitle}
-                                    onChange={(e) => setNewTitle(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                                    autoFocus
-                                    style={{ fontSize: "1.3rem", fontWeight: 700, minWidth: "240px" }}
-                                />
-                                <button className="btn btn-primary btn-sm" onClick={handleSaveTitle} disabled={isSavingTitle}>
-                                    {isSavingTitle ? "..." : "Opslaan"}
+                                <input className="input" value={actions.newTitle}
+                                    onChange={(e) => actions.setNewTitle(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && actions.handleSaveTitle()}
+                                    autoFocus style={{ fontSize: "1.3rem", fontWeight: 700, minWidth: "240px" }} />
+                                <button className="btn btn-primary btn-sm" onClick={actions.handleSaveTitle} disabled={actions.isSavingTitle}>
+                                    {actions.isSavingTitle ? "..." : "Opslaan"}
                                 </button>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setEditingTitle(false)}>
-                                    <XIcon size={14} />
-                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => actions.setEditingTitle(false)}><XIcon size={14} /></button>
                             </div>
                         ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                                 <h1 style={{ fontSize: "1.75rem", fontWeight: 800 }}>{qrCode.title}</h1>
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => { setNewTitle(qrCode.title); setEditingTitle(true); }}
-                                    aria-label="Titel bewerken"
-                                    title="Titel bewerken"
-                                    style={{ padding: "0.25rem", color: "var(--color-text-faint)" }}
-                                >
+                                <button className="btn btn-ghost btn-sm"
+                                    onClick={() => { actions.setNewTitle(qrCode.title); actions.setEditingTitle(true); }}
+                                    aria-label="Titel bewerken" title="Titel bewerken"
+                                    style={{ padding: "0.25rem", color: "var(--color-text-faint)" }}>
                                     <EditIcon size={15} />
                                 </button>
                             </div>
                         )}
-                        <span
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "0.25rem",
-                                padding: "0.25rem 0.625rem",
-                                borderRadius: "100px",
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                background: qrCode.isActive ? "var(--color-success-bg)" : "var(--color-muted-bg)",
-                                color: qrCode.isActive ? "var(--color-success)" : "var(--color-text-muted)",
-                                border: `1px solid ${qrCode.isActive ? "var(--color-success-border)" : "var(--color-muted-border)"}`,
-                            }}
-                        >
+
+                        {/* Active/inactive badge */}
+                        <span style={{
+                            display: "inline-flex", alignItems: "center", gap: "0.25rem",
+                            padding: "0.25rem 0.625rem", borderRadius: "100px", fontSize: "0.75rem", fontWeight: 600,
+                            background: qrCode.isActive ? "var(--color-success-bg)" : "var(--color-muted-bg)",
+                            color: qrCode.isActive ? "var(--color-success)" : "var(--color-text-muted)",
+                            border: `1px solid ${qrCode.isActive ? "var(--color-success-border)" : "var(--color-muted-border)"}`,
+                        }}>
                             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "currentColor", display: "inline-block" }} />
                             {qrCode.isActive ? "Actief" : "Inactief"}
                         </span>
                     </div>
-                    <p style={{ color: "var(--color-text-faint)", fontFamily: "monospace", fontSize: "0.875rem" }}>
-                        /r/{qrCode.slug}
-                    </p>
+                    <p style={{ color: "var(--color-text-faint)", fontFamily: "monospace", fontSize: "0.875rem" }}>/r/{qrCode.slug}</p>
                 </div>
+
+                {/* Action buttons */}
                 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={handleDuplicate}
-                        disabled={isDuplicating}
-                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                        title="Dupliceer deze QR code"
-                    >
+                    <button className="btn btn-secondary btn-sm" onClick={actions.handleDuplicate} disabled={actions.isDuplicating}
+                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }} title="Dupliceer deze QR code">
                         <CopyIcon size={14} />
-                        {isDuplicating ? "..." : "Dupliceren"}
+                        {actions.isDuplicating ? "..." : "Dupliceren"}
                     </button>
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={handleToggle}
-                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                    >
+                    <button className="btn btn-secondary btn-sm" onClick={actions.handleToggle}
+                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                         {qrCode.isActive ? <BanIcon size={14} /> : <CheckIcon size={14} />}
                         {qrCode.isActive ? "Deactiveren" : "Activeren"}
                     </button>
 
-                    {/* Inline delete bevestiging */}
-                    {!showDeleteConfirm ? (
-                        <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => setShowDeleteConfirm(true)}
-                            style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                        >
-                            <TrashIcon size={14} />
-                            Verwijderen
+                    {!actions.showDeleteConfirm ? (
+                        <button className="btn btn-danger btn-sm" onClick={() => actions.setShowDeleteConfirm(true)}
+                            style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                            <TrashIcon size={14} /> Verwijderen
                         </button>
                     ) : (
                         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                             <span style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>Weet je het zeker?</span>
-                            <button
-                                className="btn btn-danger btn-sm"
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                                style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                            >
+                            <button className="btn btn-danger btn-sm" onClick={actions.handleDelete} disabled={actions.isDeleting}
+                                style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                                 <TrashIcon size={14} />
-                                {isDeleting ? "Verwijderen..." : "Ja, verwijder"}
+                                {actions.isDeleting ? "Verwijderen..." : "Ja, verwijder"}
                             </button>
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => setShowDeleteConfirm(false)}
-                            >
-                                Annuleren
-                            </button>
+                            <button className="btn btn-ghost btn-sm" onClick={() => actions.setShowDeleteConfirm(false)}>Annuleren</button>
                         </div>
                     )}
                 </div>
@@ -440,29 +183,15 @@ export default function QRDetailPage() {
             <div className="qr-detail-grid">
                 {/* Left column */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
                     {/* Stats */}
                     <div className="dashboard-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
                         {DETAIL_STATS.map(({ label, value, Icon }) => (
                             <div key={label} className="card" style={{ padding: "1.25rem", textAlign: "center" }}>
-                                <div
-                                    style={{
-                                        width: "40px",
-                                        height: "40px",
-                                        borderRadius: "var(--radius-md)",
-                                        background: "var(--color-accent-bg)",
-                                        border: "1px solid var(--color-accent-border)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        margin: "0 auto 0.75rem",
-                                        color: "var(--color-accent)",
-                                    }}
-                                >
+                                <div style={{ width: "40px", height: "40px", borderRadius: "var(--radius-md)", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 0.75rem", color: "var(--color-accent)" }}>
                                     <Icon size={18} />
                                 </div>
-                                <div style={{ fontSize: "1.75rem", fontWeight: 800, background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                                    {value}
-                                </div>
+                                <div style={{ fontSize: "1.75rem", fontWeight: 800, background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{value}</div>
                                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{label}</div>
                             </div>
                         ))}
@@ -483,52 +212,34 @@ export default function QRDetailPage() {
                     <div className="card" style={{ padding: "1.5rem" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                             <h3 style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <LinkIcon size={16} style={{ color: "var(--color-text-muted)" }} />
-                                Bestemming
+                                <LinkIcon size={16} style={{ color: "var(--color-text-muted)" }} /> Bestemming
                             </h3>
-                            {!editingDest && (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => { setNewDest(qrCode.destination); setEditingDest(true); }}
-                                    style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                                >
-                                    <EditIcon size={13} />
-                                    Wijzigen
+                            {!actions.editingDest && (
+                                <button className="btn btn-secondary btn-sm"
+                                    onClick={() => { actions.setNewDest(qrCode.destination); actions.setEditingDest(true); }}
+                                    style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                    <EditIcon size={13} /> Wijzigen
                                 </button>
                             )}
                         </div>
 
-                        {editingDest ? (
+                        {actions.editingDest ? (
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                                <input
-                                    className="input"
-                                    value={newDest}
-                                    onChange={(e) => setNewDest(e.target.value)}
-                                    placeholder="Nieuwe bestemming..."
-                                    autoFocus
-                                />
+                                <input className="input" value={actions.newDest}
+                                    onChange={(e) => actions.setNewDest(e.target.value)}
+                                    placeholder="Nieuwe bestemming..." autoFocus />
                                 <div style={{ display: "flex", gap: "0.75rem" }}>
-                                    <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={handleSaveDest}
-                                        disabled={isSaving}
-                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                                    >
-                                        <CheckIcon size={14} />
-                                        {isSaving ? "Opslaan..." : "Opslaan"}
+                                    <button className="btn btn-primary btn-sm" onClick={actions.handleSaveDest} disabled={actions.isSaving}
+                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                        <CheckIcon size={14} /> {actions.isSaving ? "Opslaan..." : "Opslaan"}
                                     </button>
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() => setEditingDest(false)}
-                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                                    >
-                                        <XIcon size={14} />
-                                        Annuleren
+                                    <button className="btn btn-ghost btn-sm" onClick={() => actions.setEditingDest(false)}
+                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                        <XIcon size={14} /> Annuleren
                                     </button>
                                 </div>
                                 <p style={{ fontSize: "0.75rem", color: "var(--color-accent)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                                    <ZapIcon size={12} />
-                                    De QR code zelf verandert niet — alleen de bestemming.
+                                    <ZapIcon size={12} /> De QR code zelf verandert niet — alleen de bestemming.
                                 </p>
                             </div>
                         ) : (
@@ -539,14 +250,14 @@ export default function QRDetailPage() {
                     </div>
                 </div>
 
-                {/* Right column: QR + design edit + download */}
+                {/* Right column */}
                 <div className="qr-detail-right" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "sticky", top: "2rem" }}>
+
                     {/* QR Preview card */}
                     <div className="card" style={{ padding: "1.5rem", textAlign: "center" }}>
                         <QRPreview
                             value={redirectUrl}
-                            fgColor={activeCustom.fgColor}
-                            bgColor={activeCustom.bgColor}
+                            fgColor={activeCustom.fgColor} bgColor={activeCustom.bgColor}
                             dotStyle={activeCustom.dotStyle}
                             errorCorrectionLevel={(activeCustom.errorCorrectionLevel ?? "M") as "L" | "M" | "Q" | "H"}
                             size={220}
@@ -565,268 +276,52 @@ export default function QRDetailPage() {
                             logoHideDots={activeCustom.logoHideDots}
                         />
 
-                        {/* Redirect destination info */}
+                        {/* Destination info */}
                         <div style={{ marginTop: "1rem", padding: "0.625rem 0.875rem", background: "var(--color-success-bg)", border: "1px solid var(--color-success-border)", borderRadius: "var(--radius-md)" }}>
                             <div style={{ fontSize: "0.7rem", color: "var(--color-success)", fontWeight: 600, marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                                <ArrowUpRightIcon size={11} />
-                                Scannen stuurt door naar:
+                                <ArrowUpRightIcon size={11} /> Scannen stuurt door naar:
                             </div>
                             <div style={{ fontSize: "0.75rem", color: "var(--color-text)", fontFamily: "monospace", wordBreak: "break-all" }}>
                                 {qrCode.destination}
                             </div>
                         </div>
 
-                        {/* Redirect URL with copy button */}
+                        {/* Redirect URL + copy */}
                         <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
                             <p style={{ fontSize: "0.65rem", color: "var(--color-text-faint)", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "220px" }}>
                                 via {redirectUrl}
                             </p>
-                            <button
-                                onClick={handleCopyUrl}
-                                title="Kopieer redirect URL"
-                                aria-label={copied ? "URL gekopieerd!" : "Kopieer redirect URL naar klembord"}
-                                style={{
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    padding: "2px",
-                                    color: copied ? "var(--color-success)" : "var(--color-text-faint)",
-                                    transition: "color 0.2s ease",
-                                    flexShrink: 0,
-                                }}
-                            >
-                                {copied ? (
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
+                            <button onClick={() => actions.handleCopyUrl(redirectUrl)} title="Kopieer redirect URL"
+                                aria-label={actions.copied ? "URL gekopieerd!" : "Kopieer redirect URL naar klembord"}
+                                style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: actions.copied ? "var(--color-success)" : "var(--color-text-faint)", transition: "color 0.2s ease", flexShrink: 0 }}>
+                                {actions.copied ? (
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                                 ) : (
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
                                 )}
                             </button>
                         </div>
                     </div>
 
                     {/* Design edit panel */}
-                    <div className="card" style={{ padding: "1.5rem" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: editingDesign ? "1.25rem" : 0 }}>
-                            <h4 style={{ fontWeight: 700, fontSize: "0.9rem", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                                </svg>
-                                Design
-                            </h4>
-                            {!editingDesign ? (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={openDesignEdit}
-                                    style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                                >
-                                    <EditIcon size={13} />
-                                    Bewerken
-                                </button>
-                            ) : (
-                                <button className="btn btn-ghost btn-sm" onClick={() => setEditingDesign(false)}>
-                                    <XIcon size={13} />
-                                </button>
-                            )}
-                        </div>
+                    <DesignEditPanel
+                        editingDesign={design.editingDesign}
+                        isSavingDesign={design.isSavingDesign}
+                        designDraft={design.designDraft}
+                        setDesignDraft={design.setDesignDraft}
+                        onOpen={() => design.openDesignEdit(qrCode)}
+                        onSave={design.handleSaveDesign}
+                        onClose={() => design.setEditingDesign(false)}
+                        fgColor={qrCode.customization?.fgColor ?? "#000000"}
+                        bgColor={qrCode.customization?.bgColor ?? "#ffffff"}
+                        dotStyle={qrCode.customization?.dotStyle ?? "square"}
+                        logoUrl={qrCode.customization?.logoUrl}
+                    />
 
-                        {editingDesign && designDraft && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-
-                                {/* Colors */}
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                                    <div>
-                                        <label className="input-label">Voorgrond</label>
-                                        <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
-                                            <input type="color" value={designDraft.fgColor}
-                                                onChange={(e) => setDesignDraft(d => d ? { ...d, fgColor: e.target.value } : d)}
-                                                style={{ width: "36px", height: "36px", border: "none", cursor: "pointer", borderRadius: "6px" }} />
-                                            <input className="input" value={designDraft.fgColor}
-                                                onChange={(e) => setDesignDraft(d => d ? { ...d, fgColor: e.target.value } : d)}
-                                                style={{ flex: 1, fontSize: "0.75rem", padding: "0.375rem 0.5rem" }} />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="input-label">Achtergrond</label>
-                                        <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
-                                            <input type="color" value={designDraft.bgColor}
-                                                onChange={(e) => setDesignDraft(d => d ? { ...d, bgColor: e.target.value } : d)}
-                                                style={{ width: "36px", height: "36px", border: "none", cursor: "pointer", borderRadius: "6px" }} />
-                                            <input className="input" value={designDraft.bgColor}
-                                                onChange={(e) => setDesignDraft(d => d ? { ...d, bgColor: e.target.value } : d)}
-                                                style={{ flex: 1, fontSize: "0.75rem", padding: "0.375rem 0.5rem" }} />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Corner color */}
-                                <div>
-                                    <label className="input-label">Hoekkleur <span style={{ color: "var(--color-text-faint)", fontWeight: 400 }}>(optioneel)</span></label>
-                                    <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
-                                        <input type="color" value={designDraft.cornerColor || designDraft.fgColor}
-                                            onChange={(e) => setDesignDraft(d => d ? { ...d, cornerColor: e.target.value } : d)}
-                                            style={{ width: "36px", height: "36px", border: "none", cursor: "pointer", borderRadius: "6px" }} />
-                                        <input className="input" value={designDraft.cornerColor}
-                                            onChange={(e) => setDesignDraft(d => d ? { ...d, cornerColor: e.target.value } : d)}
-                                            placeholder="Zelfde als voorgrond"
-                                            style={{ flex: 1, fontSize: "0.75rem", padding: "0.375rem 0.5rem" }} />
-                                        {designDraft.cornerColor && (
-                                            <button className="btn btn-ghost btn-sm"
-                                                onClick={() => setDesignDraft(d => d ? { ...d, cornerColor: "" } : d)}
-                                                title="Reset naar voorgrondkleur"
-                                                style={{ padding: "0.25rem 0.5rem", fontSize: "0.7rem" }}>
-                                                Reset
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Dot style */}
-                                <div>
-                                    <label className="input-label">Dot stijl</label>
-                                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                                        {DOT_STYLES.map((ds) => (
-                                            <button
-                                                key={ds.value}
-                                                onClick={() => setDesignDraft(d => d ? { ...d, dotStyle: ds.value } : d)}
-                                                style={{
-                                                    padding: "0.375rem 0.75rem",
-                                                    borderRadius: "var(--radius-md)",
-                                                    background: designDraft.dotStyle === ds.value ? "var(--color-accent-bg)" : "var(--color-bg-2)",
-                                                    border: `1px solid ${designDraft.dotStyle === ds.value ? "var(--color-accent-border-active)" : "var(--color-border)"}`,
-                                                    cursor: "pointer", color: "var(--color-text)", fontSize: "0.75rem",
-                                                    fontWeight: designDraft.dotStyle === ds.value ? 600 : 400,
-                                                    transition: "var(--transition)",
-                                                }}
-                                            >
-                                                {ds.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Logo URL */}
-                                <div>
-                                    <label className="input-label">Logo URL <span style={{ color: "var(--color-text-faint)", fontWeight: 400 }}>(optioneel)</span></label>
-                                    <input
-                                        className="input"
-                                        placeholder="https://..."
-                                        value={designDraft.logoUrl}
-                                        onChange={(e) => setDesignDraft(d => d ? { ...d, logoUrl: e.target.value } : d)}
-                                        style={{ fontSize: "0.8rem" }}
-                                    />
-                                </div>
-
-                                {/* Logo options — only when logo is active */}
-                                {designDraft.logoUrl && (
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "0.875rem", background: "var(--color-surface-2)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-border)" }}>
-                                        <p style={{ fontSize: "0.75rem", fontWeight: 600, margin: 0, color: "var(--color-text)" }}>Logo opties</p>
-
-                                        {/* Zoom */}
-                                        <div>
-                                            <label className="input-label" style={{ display: "flex", justifyContent: "space-between" }}>
-                                                <span>Grootte (zoom)</span>
-                                                <span style={{ color: "var(--color-accent)", fontWeight: 500 }}>{Math.round((designDraft.logoSize ?? 0.35) * 100)}%</span>
-                                            </label>
-                                            <input type="range" min={10} max={50} step={1}
-                                                value={Math.round((designDraft.logoSize ?? 0.35) * 100)}
-                                                onChange={(e) => setDesignDraft(d => d ? { ...d, logoSize: Number(e.target.value) / 100 } : d)}
-                                                style={{ width: "100%", accentColor: "var(--color-accent)" }} />
-                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", color: "var(--color-text-faint)", marginTop: "0.125rem" }}>
-                                                <span>Klein (10%)</span>
-                                                <span>Groot (50%)</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Margin */}
-                                        <div>
-                                            <label className="input-label" style={{ display: "flex", justifyContent: "space-between" }}>
-                                                <span>Witruimte rondom</span>
-                                                <span style={{ color: "var(--color-accent)", fontWeight: 500 }}>{designDraft.logoMargin ?? 4}px</span>
-                                            </label>
-                                            <input type="range" min={0} max={20} step={1}
-                                                value={designDraft.logoMargin ?? 4}
-                                                onChange={(e) => setDesignDraft(d => d ? { ...d, logoMargin: Number(e.target.value) } : d)}
-                                                style={{ width: "100%", accentColor: "var(--color-accent)" }} />
-                                        </div>
-
-                                        {/* Hide dots toggle */}
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <div>
-                                                <p style={{ margin: 0, fontSize: "0.8125rem", fontWeight: 500 }}>Dots achter logo verbergen</p>
-                                                <p style={{ margin: 0, fontSize: "0.7rem", color: "var(--color-text-muted)" }}>Aanbevolen voor een cleaner resultaat</p>
-                                            </div>
-                                            <button
-                                                onClick={() => setDesignDraft(d => d ? { ...d, logoHideDots: !(d.logoHideDots ?? true) } : d)}
-                                                style={{
-                                                    width: "44px", height: "24px", borderRadius: "100px",
-                                                    background: (designDraft.logoHideDots ?? true) ? "var(--color-accent)" : "var(--color-surface-3, var(--color-surface-2))",
-                                                    border: "none", cursor: "pointer", position: "relative", flexShrink: 0,
-                                                    transition: "background 0.2s ease",
-                                                }}
-                                                role="switch"
-                                                aria-checked={designDraft.logoHideDots ?? true}
-                                                aria-label="Dots achter logo verbergen"
-                                            >
-                                                <span style={{
-                                                    position: "absolute", top: "3px",
-                                                    left: (designDraft.logoHideDots ?? true) ? "23px" : "3px",
-                                                    width: "18px", height: "18px", borderRadius: "50%",
-                                                    background: "#fff", transition: "left 0.2s ease",
-                                                    boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
-                                                }} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Actions */}
-                                <div style={{ display: "flex", gap: "0.75rem", paddingTop: "0.25rem" }}>
-                                    <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={handleSaveDesign}
-                                        disabled={isSavingDesign}
-                                        style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}
-                                    >
-                                        <CheckIcon size={14} />
-                                        {isSavingDesign ? "Opslaan..." : "Design opslaan"}
-                                    </button>
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() => setEditingDesign(false)}
-                                    >
-                                        Annuleren
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {!editingDesign && (
-                            <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                                    <div style={{ width: "16px", height: "16px", borderRadius: "3px", background: qrCode.customization?.fgColor ?? "#000", border: "1px solid var(--color-border)", flexShrink: 0 }} title={`Voorgrond: ${qrCode.customization?.fgColor ?? "#000000"}`} />
-                                    <div style={{ width: "16px", height: "16px", borderRadius: "3px", background: qrCode.customization?.bgColor ?? "#fff", border: "1px solid var(--color-border)", flexShrink: 0 }} title={`Achtergrond: ${qrCode.customization?.bgColor ?? "#ffffff"}`} />
-                                    <span style={{ fontSize: "0.72rem", color: "var(--color-text-muted)" }}>
-                                        {DOT_STYLES.find(d => d.value === (qrCode.customization?.dotStyle ?? "square"))?.label ?? "Vierkant"}
-                                    </span>
-                                </div>
-                                {qrCode.customization?.logoUrl && (
-                                    <span style={{ fontSize: "0.72rem", color: "var(--color-accent)", background: "var(--color-accent-bg)", padding: "0.125rem 0.5rem", borderRadius: "100px", border: "1px solid var(--color-accent-border)" }}>
-                                        ✓ Logo
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
+                    {/* Download */}
                     <QRDownload
                         value={redirectUrl}
-                        fgColor={activeCustom.fgColor}
-                        bgColor={activeCustom.bgColor}
+                        fgColor={activeCustom.fgColor} bgColor={activeCustom.bgColor}
                         dotStyle={activeCustom.dotStyle}
                         errorCorrectionLevel={(activeCustom.errorCorrectionLevel ?? "M") as "L" | "M" | "Q" | "H"}
                         filename={qrCode.slug}
@@ -840,13 +335,11 @@ export default function QRDetailPage() {
                         logoMargin={activeCustom.logoMargin}
                         logoHideDots={activeCustom.logoHideDots}
                     />
-
                 </div>
             </div>
 
-            {/* Bottom section: browser breakdown + recent scans feed */}
+            {/* Bottom: browser breakdown + recent scans */}
             <div style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "1.5rem" }}>
-                {/* Browser breakdown */}
                 {scanStats && (
                     <div className="card" style={{ padding: "1.25rem" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -858,112 +351,8 @@ export default function QRDetailPage() {
                         <BreakdownCard title="" data={scanStats.browserBreakdown} />
                     </div>
                 )}
-
-                {/* Recent scans feed */}
-                <div className="card" style={{ padding: "1.25rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-accent)" }}>
-                                <ZapIcon size={14} />
-                            </div>
-                            <h4 style={{ fontWeight: 700, fontSize: "0.9rem", margin: 0 }}>Recente scans</h4>
-                        </div>
-                        {recentScans && recentScans.length > 0 && (
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={handleExportCSV}
-                                style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem" }}
-                                title="Exporteer scan data als CSV"
-                            >
-                                <DownloadIcon size={13} />
-                                CSV
-                            </button>
-                        )}
-                    </div>
-                    {!recentScans ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                            {[1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: "48px", borderRadius: "var(--radius-sm)" }} />)}
-                        </div>
-                    ) : recentScans.length === 0 ? (
-                        <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "1rem 0" }}>
-                            Nog geen scans geregistreerd.
-                        </p>
-                    ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                            {recentScans.map((scan) => (
-                                <div
-                                    key={scan._id as string}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "0.75rem",
-                                        padding: "0.625rem 0.75rem",
-                                        background: "var(--color-surface-2)",
-                                        borderRadius: "var(--radius-sm)",
-                                        fontSize: "0.8125rem",
-                                    }}
-                                >
-                                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                        <SmartphoneIcon size={13} />
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 500, color: "var(--color-text)" }}>
-                                            {scan.country ?? "Onbekend land"}{scan.city ? ` · ${scan.city}` : ""}
-                                        </div>
-                                        <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)" }}>
-                                            {scan.device ?? "?"} · {scan.browser ?? "?"} · {scan.os ?? "?"}
-                                        </div>
-                                    </div>
-                                    <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)", flexShrink: 0, whiteSpace: "nowrap" }}>
-                                        {new Date(scan.scannedAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
-                                        <br />
-                                        <span style={{ fontSize: "0.65rem" }}>{new Date(scan.scannedAt).toLocaleDateString("nl-NL")}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <RecentScansFeed recentScans={recentScans} onExportCSV={actions.handleExportCSV} />
             </div>
-        </div>
-    );
-}
-
-function BreakdownCard({ title, data }: { title: string; data: Record<string, number> }) {
-    const total = Object.values(data).reduce((s, n) => s + n, 0);
-    const sorted = Object.entries(data).sort(([, a], [, b]) => b - a).slice(0, 5);
-
-    return (
-        <div className="card" style={{ padding: "1.25rem" }}>
-            <h4 style={{ fontWeight: 700, marginBottom: "1rem", fontSize: "0.9rem" }}>{title}</h4>
-            {sorted.length === 0 ? (
-                <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)" }}>Nog geen data</p>
-            ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                    {sorted.map(([key, count]) => {
-                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                        return (
-                            <div key={key}>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
-                                    <span style={{ color: "var(--color-text-muted)" }}>{key}</span>
-                                    <span style={{ fontWeight: 600 }}>{pct}%</span>
-                                </div>
-                                <div style={{ height: "4px", background: "var(--color-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
-                                    <div
-                                        style={{
-                                            height: "100%",
-                                            width: `${pct}%`,
-                                            background: "var(--gradient-brand)",
-                                            borderRadius: "100px",
-                                            transition: "width 0.5s ease",
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
         </div>
     );
 }
