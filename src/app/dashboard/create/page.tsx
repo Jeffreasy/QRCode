@@ -312,7 +312,7 @@ export default function CreateQRPage() {
                     {step === 0 && (
                         <div>
                             <h2 style={{ fontWeight: 700, marginBottom: "1.25rem" }}>Kies een QR type</h2>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.75rem" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(145px, 1fr))", gap: "0.75rem" }}>
                                 {(Object.entries(QR_TYPE_META) as [QRType, typeof QR_TYPE_META[QRType]][]).map(([type, meta]) => {
                                     const TypeIcon = QR_TYPE_ICONS[type] ?? QrCodeIcon;
                                     const isSelected = selectedType === type;
@@ -845,7 +845,7 @@ export default function CreateQRPage() {
                 </div>
 
                 {/* Live preview */}
-                <div style={{ position: "sticky", top: "2rem" }}>
+                <div className="create-wizard-preview" style={{ position: "sticky", top: "2rem" }}>
                     <div className="card" style={{ padding: "1.5rem", textAlign: "center" }}>
                         <div style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginBottom: "1rem", fontWeight: 600 }}>
                             Live preview

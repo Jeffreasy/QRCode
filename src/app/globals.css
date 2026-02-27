@@ -471,7 +471,7 @@ body {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    height: 100vh !important;
+    height: 100dvh !important;
     z-index: 40 !important;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -490,8 +490,9 @@ body {
     grid-template-columns: 1fr !important;
   }
 
+  /* Stats: 2-col on tablet (better use of space than 1-col) */
   .dashboard-stats-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 
   .mobile-header {
@@ -499,6 +500,7 @@ body {
   }
 }
 
+/* Small phones */
 @media (max-width: 480px) {
   .dashboard-stats-grid {
     grid-template-columns: 1fr !important;
@@ -627,7 +629,6 @@ body {
   align-items: center;
   overflow-x: auto;
   padding-bottom: 0.25rem;
-  /* hide scrollbar on mobile — steps remain reachable by scrolling */
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -636,13 +637,20 @@ body {
   display: none;
 }
 
-/* Dashboard main — responsive padding */
+/* QR detail page two-column layout */
+.qr-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Responsive: tablet 768px */
 @media (max-width: 768px) {
   .dashboard-main {
     padding: 1.25rem 1rem !important;
   }
 
-  /* Step indicator stays scrollable but labels get smaller */
   .create-step-indicator span {
     font-size: 0.75rem !important;
   }
@@ -652,9 +660,46 @@ body {
     grid-template-columns: 1fr !important;
   }
 
-  /* QR detail: sticky preview panel becomes static on mobile */
-  .create-wizard-grid>div:last-child {
+  /* Preview panel no longer sticky on mobile */
+  .create-wizard-preview {
     position: static !important;
+    top: auto !important;
+  }
+
+  /* QR detail: stack columns */
+  .qr-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* QR detail: right column (preview/download) comes first on mobile */
+  .qr-detail-right {
+    order: -1;
+  }
+}
+
+/* Responsive: small phones 480px */
+@media (max-width: 480px) {
+  .create-step-indicator span {
+    display: none;
+  }
+
+  .create-step-indicator .step-number {
+    display: flex;
+  }
+}
+
+/* Touch-target enforcement (WCAG 2.5.5) */
+@media (hover: none) and (pointer: coarse) {
+
+  .btn,
+  .sidebar-link,
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .btn-sm {
+    min-height: 36px;
   }
 }
 

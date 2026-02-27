@@ -284,7 +284,7 @@ export default function QRDetailPage() {
                 </div>
             </div>
 
-            <div className="dashboard-grid-2col" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", alignItems: "start" }}>
+            <div className="qr-detail-grid">
                 {/* Left column */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                     {/* Stats */}
@@ -387,7 +387,7 @@ export default function QRDetailPage() {
                 </div>
 
                 {/* Right column: QR + design edit + download */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "sticky", top: "2rem" }}>
+                <div className="qr-detail-right" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "sticky", top: "2rem" }}>
                     {/* QR Preview card */}
                     <div className="card" style={{ padding: "1.5rem", textAlign: "center" }}>
                         <QRPreview
