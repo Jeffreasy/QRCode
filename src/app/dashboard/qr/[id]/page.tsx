@@ -49,8 +49,16 @@ export default function QRDetailPage() {
         bgColor: string;
         dotStyle: string;
         cornerColor: string;
+        cornerSquareType: string;
+        cornerDotType: string;
+        qrShape: "square" | "circle";
+        backgroundRound: number;
         errorCorrectionLevel: string;
         logoUrl: string;
+        borderEnabled: boolean;
+        borderColor: string;
+        borderWidth: number;
+        borderRadius: number;
     } | null>(null);
 
     const qrId = params.id as Id<"qr_codes">;
@@ -140,8 +148,16 @@ export default function QRDetailPage() {
             bgColor: qrCode!.customization?.bgColor ?? "#ffffff",
             dotStyle: qrCode!.customization?.dotStyle ?? "square",
             cornerColor: qrCode!.customization?.cornerColor ?? "",
+            cornerSquareType: qrCode!.customization?.cornerSquareType ?? "",
+            cornerDotType: qrCode!.customization?.cornerDotType ?? "",
+            qrShape: (qrCode!.customization?.qrShape as "square" | "circle") ?? "square",
+            backgroundRound: qrCode!.customization?.backgroundRound ?? 0,
             errorCorrectionLevel: qrCode!.customization?.errorCorrectionLevel ?? "M",
             logoUrl: qrCode!.customization?.logoUrl ?? "",
+            borderEnabled: qrCode!.customization?.borderEnabled ?? false,
+            borderColor: qrCode!.customization?.borderColor ?? "#38bdf8",
+            borderWidth: qrCode!.customization?.borderWidth ?? 4,
+            borderRadius: qrCode!.customization?.borderRadius ?? 16,
         });
         setEditingDesign(true);
     }
@@ -157,8 +173,16 @@ export default function QRDetailPage() {
                     bgColor: designDraft.bgColor,
                     dotStyle: designDraft.dotStyle as "square" | "rounded" | "dots" | "classy" | "classy-rounded" | "extra-rounded",
                     cornerColor: designDraft.cornerColor || undefined,
+                    cornerSquareType: (designDraft.cornerSquareType || undefined) as "square" | "dot" | "extra-rounded" | undefined,
+                    cornerDotType: (designDraft.cornerDotType || undefined) as "square" | "dot" | undefined,
+                    qrShape: designDraft.qrShape,
+                    backgroundRound: designDraft.backgroundRound,
                     errorCorrectionLevel: designDraft.errorCorrectionLevel,
                     logoUrl: designDraft.logoUrl || undefined,
+                    borderEnabled: designDraft.borderEnabled,
+                    borderColor: designDraft.borderColor,
+                    borderWidth: designDraft.borderWidth,
+                    borderRadius: designDraft.borderRadius,
                 },
             });
             setEditingDesign(false);
@@ -173,8 +197,16 @@ export default function QRDetailPage() {
         bgColor: qrCode.customization?.bgColor ?? "#ffffff",
         dotStyle: qrCode.customization?.dotStyle ?? "square",
         cornerColor: qrCode.customization?.cornerColor ?? "",
+        cornerSquareType: qrCode.customization?.cornerSquareType ?? "",
+        cornerDotType: qrCode.customization?.cornerDotType ?? "",
+        qrShape: (qrCode.customization?.qrShape ?? "square") as "square" | "circle",
+        backgroundRound: qrCode.customization?.backgroundRound ?? 0,
         errorCorrectionLevel: qrCode.customization?.errorCorrectionLevel ?? "M",
         logoUrl: qrCode.customization?.logoUrl ?? "",
+        borderEnabled: qrCode.customization?.borderEnabled ?? false,
+        borderColor: qrCode.customization?.borderColor ?? "#38bdf8",
+        borderWidth: qrCode.customization?.borderWidth ?? 4,
+        borderRadius: qrCode.customization?.borderRadius ?? 16,
     };
 
     const DETAIL_STATS = [
@@ -367,6 +399,14 @@ export default function QRDetailPage() {
                             size={220}
                             logoUrl={activeCustom.logoUrl || undefined}
                             cornerColor={activeCustom.cornerColor || undefined}
+                            cornerSquareType={(activeCustom.cornerSquareType || undefined) as "square" | "dot" | "extra-rounded" | undefined}
+                            cornerDotType={(activeCustom.cornerDotType || undefined) as "square" | "dot" | undefined}
+                            qrShape={activeCustom.qrShape}
+                            backgroundRound={activeCustom.backgroundRound}
+                            borderEnabled={activeCustom.borderEnabled}
+                            borderColor={activeCustom.borderColor}
+                            borderWidth={activeCustom.borderWidth}
+                            borderRadius={activeCustom.borderRadius}
                         />
 
                         {/* Redirect destination info */}
@@ -573,6 +613,10 @@ export default function QRDetailPage() {
                         filename={qrCode.slug}
                         logoUrl={activeCustom.logoUrl || undefined}
                         cornerColor={activeCustom.cornerColor || undefined}
+                        cornerSquareType={(activeCustom.cornerSquareType || undefined) as "square" | "dot" | "extra-rounded" | undefined}
+                        cornerDotType={(activeCustom.cornerDotType || undefined) as "square" | "dot" | undefined}
+                        qrShape={activeCustom.qrShape}
+                        backgroundRound={activeCustom.backgroundRound}
                     />
 
                 </div>

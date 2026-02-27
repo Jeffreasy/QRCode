@@ -3,15 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import QRCodeStyling from "qr-code-styling";
 
-interface QRPreviewProps {
-    value: string;
+export interface QRCustomization {
     fgColor?: string;
     bgColor?: string;
     dotStyle?: string;
     errorCorrectionLevel?: "L" | "M" | "Q" | "H";
-    size?: number;
     logoUrl?: string;
     cornerColor?: string;
+    cornerSquareType?: "square" | "dot" | "extra-rounded";
+    cornerDotType?: "square" | "dot";
+    qrShape?: "square" | "circle";
+    backgroundRound?: number;
+    // Border properties (CSS-level)
+    borderEnabled?: boolean;
+    borderColor?: string;
+    borderWidth?: number;
+    borderRadius?: number;
+}
+
+interface QRPreviewProps extends QRCustomization {
+    value: string;
+    size?: number;
 }
 
 export default function QRPreview({
@@ -23,9 +35,16 @@ export default function QRPreview({
     size = 220,
     logoUrl,
     cornerColor,
+    cornerSquareType,
+    cornerDotType,
+    qrShape = "square",
+    backgroundRound = 0,
+    borderEnabled = false,
+    borderColor = "#38bdf8",
+    borderWidth = 4,
+    borderRadius = 16,
 }: QRPreviewProps) {
     const ref = useRef<HTMLDivElement>(null);
-    const qrRef = useRef<QRCodeStyling | null>(null);
     const [isRendering, setIsRendering] = useState(true);
 
     const resolvedCorner = cornerColor ?? fgColor;
@@ -35,19 +54,32 @@ export default function QRPreview({
         setIsRendering(true);
         ref.current.innerHTML = "";
 
-        qrRef.current = new QRCodeStyling({
+        const qr = new QRCodeStyling({
             width: size,
             height: size,
             data: value || "https://qrcodemaster.app",
             image: logoUrl,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shape: qrShape as any,
             dotsOptions: {
                 color: fgColor,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 type: dotStyle as any,
             },
-            backgroundOptions: { color: bgColor },
-            cornersSquareOptions: { color: resolvedCorner },
-            cornersDotOptions: { color: resolvedCorner },
+            backgroundOptions: {
+                color: bgColor,
+                round: backgroundRound,
+            },
+            cornersSquareOptions: {
+                color: resolvedCorner,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: cornerSquareType as any,
+            },
+            cornersDotOptions: {
+                color: resolvedCorner,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: cornerDotType as any,
+            },
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
                 crossOrigin: "anonymous",
@@ -57,28 +89,35 @@ export default function QRPreview({
             },
         });
 
-        qrRef.current.append(ref.current);
-
-        // Small delay to let the canvas render before removing the skeleton
+        qr.append(ref.current);
         const timer = setTimeout(() => setIsRendering(false), 150);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value, fgColor, bgColor, dotStyle, errorCorrectionLevel, size, logoUrl, cornerColor]);
+    }, [value, fgColor, bgColor, dotStyle, errorCorrectionLevel, size, logoUrl,
+        cornerColor, cornerSquareType, cornerDotType, qrShape, backgroundRound]);
+
+    const activeBorderRadius = borderEnabled ? borderRadius ?? 16 : 20;
+    const activeBorderStyle = borderEnabled
+        ? `${borderWidth ?? 4}px solid ${borderColor ?? "#38bdf8"}`
+        : "none";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem" }}>
-            {/* QR Frame — hover effect handled by .card CSS class on parent */}
             <div
                 style={{
                     position: "relative",
                     padding: "1.25rem",
                     background: "#ffffff",
-                    borderRadius: "var(--radius-xl)",
-                    boxShadow: "0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.15), 0 0 48px rgba(56,189,248,0.12)",
+                    borderRadius: `${activeBorderRadius}px`,
+                    border: activeBorderStyle,
+                    boxShadow: borderEnabled
+                        ? `0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.15), 0 0 48px ${borderColor ?? "#38bdf8"}33`
+                        : "0 0 0 1px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.15), 0 0 48px rgba(56,189,248,0.12)",
                     display: "inline-block",
+                    transition: "border 0.2s ease, border-radius 0.2s ease, box-shadow 0.2s ease",
                 }}
             >
-                {/* Skeleton overlay while rendering */}
+                {/* Skeleton */}
                 {isRendering && (
                     <div style={{
                         position: "absolute",
@@ -91,7 +130,7 @@ export default function QRPreview({
                     }} />
                 )}
 
-                {/* Actual QR canvas */}
+                {/* QR Canvas */}
                 <div
                     ref={ref}
                     aria-label="QR code preview"
@@ -104,37 +143,29 @@ export default function QRPreview({
                     }}
                 />
 
-                {/* Corner accents */}
-                {["top-left", "top-right", "bottom-left", "bottom-right"].map((pos) => {
+                {/* Corner accents — hidden when border is on */}
+                {!borderEnabled && ["top-left", "top-right", "bottom-left", "bottom-right"].map((pos) => {
                     const [v, h] = pos.split("-");
                     return (
-                        <div
-                            key={pos}
-                            style={{
-                                position: "absolute",
-                                [v]: "6px",
-                                [h]: "6px",
-                                width: "12px",
-                                height: "12px",
-                                borderTop: v === "top" ? "2px solid rgba(56,189,248,0.5)" : "none",
-                                borderBottom: v === "bottom" ? "2px solid rgba(56,189,248,0.5)" : "none",
-                                borderLeft: h === "left" ? "2px solid rgba(56,189,248,0.5)" : "none",
-                                borderRight: h === "right" ? "2px solid rgba(56,189,248,0.5)" : "none",
-                                borderRadius: v === "top" && h === "left" ? "3px 0 0 0"
-                                    : v === "top" && h === "right" ? "0 3px 0 0"
-                                        : v === "bottom" && h === "left" ? "0 0 0 3px"
-                                            : "0 0 3px 0",
-                            }}
-                        />
+                        <div key={pos} style={{
+                            position: "absolute",
+                            [v]: "6px", [h]: "6px",
+                            width: "12px", height: "12px",
+                            borderTop: v === "top" ? "2px solid rgba(56,189,248,0.5)" : "none",
+                            borderBottom: v === "bottom" ? "2px solid rgba(56,189,248,0.5)" : "none",
+                            borderLeft: h === "left" ? "2px solid rgba(56,189,248,0.5)" : "none",
+                            borderRight: h === "right" ? "2px solid rgba(56,189,248,0.5)" : "none",
+                            borderRadius: v === "top" && h === "left" ? "3px 0 0 0"
+                                : v === "top" && h === "right" ? "0 3px 0 0"
+                                    : v === "bottom" && h === "left" ? "0 0 0 3px" : "0 0 3px 0",
+                        }} />
                     );
                 })}
             </div>
 
-            {/* Preview label */}
+            {/* Live indicator */}
             <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.375rem",
+                display: "flex", alignItems: "center", gap: "0.375rem",
                 padding: "0.25rem 0.75rem",
                 background: "rgba(56,189,248,0.08)",
                 border: "1px solid rgba(56,189,248,0.15)",

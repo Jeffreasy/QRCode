@@ -45,6 +45,24 @@ export const createQRCode = mutation({
                     v.literal("extra-rounded")
                 )),
                 cornerColor: v.optional(v.string()),
+                cornerSquareType: v.optional(v.union(
+                    v.literal("square"),
+                    v.literal("dot"),
+                    v.literal("extra-rounded")
+                )),
+                cornerDotType: v.optional(v.union(
+                    v.literal("square"),
+                    v.literal("dot")
+                )),
+                qrShape: v.optional(v.union(
+                    v.literal("square"),
+                    v.literal("circle")
+                )),
+                backgroundRound: v.optional(v.number()),
+                borderEnabled: v.optional(v.boolean()),
+                borderColor: v.optional(v.string()),
+                borderWidth: v.optional(v.number()),
+                borderRadius: v.optional(v.number()),
                 errorCorrectionLevel: v.optional(v.string()),
             })
         ),
@@ -149,6 +167,24 @@ export const updateCustomization = mutation({
                 v.literal("extra-rounded")
             )),
             cornerColor: v.optional(v.string()),
+            cornerSquareType: v.optional(v.union(
+                v.literal("square"),
+                v.literal("dot"),
+                v.literal("extra-rounded")
+            )),
+            cornerDotType: v.optional(v.union(
+                v.literal("square"),
+                v.literal("dot")
+            )),
+            qrShape: v.optional(v.union(
+                v.literal("square"),
+                v.literal("circle")
+            )),
+            backgroundRound: v.optional(v.number()),
+            borderEnabled: v.optional(v.boolean()),
+            borderColor: v.optional(v.string()),
+            borderWidth: v.optional(v.number()),
+            borderRadius: v.optional(v.number()),
             errorCorrectionLevel: v.optional(v.string()),
         }),
     },

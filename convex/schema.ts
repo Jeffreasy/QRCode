@@ -31,6 +31,25 @@ export default defineSchema({
                 v.literal("extra-rounded")
             )),
             cornerColor: v.optional(v.string()),
+            cornerSquareType: v.optional(v.union(
+                v.literal("square"),
+                v.literal("dot"),
+                v.literal("extra-rounded")
+            )),
+            cornerDotType: v.optional(v.union(
+                v.literal("square"),
+                v.literal("dot")
+            )),
+            qrShape: v.optional(v.union(
+                v.literal("square"),
+                v.literal("circle")
+            )),
+            backgroundRound: v.optional(v.number()), // 0-1
+            // Border (CSS-level frame around the white QR background)
+            borderEnabled: v.optional(v.boolean()),
+            borderColor: v.optional(v.string()),
+            borderWidth: v.optional(v.number()), // px
+            borderRadius: v.optional(v.number()), // px
             errorCorrectionLevel: v.optional(v.string()), // "L" | "M" | "Q" | "H"
         }),
         totalScans: v.number(),

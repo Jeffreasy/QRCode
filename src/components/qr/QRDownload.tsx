@@ -1,17 +1,10 @@
-"use client";
-
 import { useState } from "react";
 import QRCodeStyling from "qr-code-styling";
+import type { QRCustomization } from "./QRPreview";
 
-interface QRDownloadProps {
+interface QRDownloadProps extends QRCustomization {
     value: string;
-    fgColor?: string;
-    bgColor?: string;
-    dotStyle?: string;
-    errorCorrectionLevel?: "L" | "M" | "Q" | "H";
     filename?: string;
-    logoUrl?: string;
-    cornerColor?: string;
 }
 
 export default function QRDownload({
@@ -23,6 +16,10 @@ export default function QRDownload({
     filename = "qr-code",
     logoUrl,
     cornerColor,
+    cornerSquareType,
+    cornerDotType,
+    qrShape = "square",
+    backgroundRound = 0,
 }: QRDownloadProps) {
     const [loadingPng, setLoadingPng] = useState(false);
     const [loadingSvg, setLoadingSvg] = useState(false);
@@ -36,14 +33,24 @@ export default function QRDownload({
             height: size,
             data: value,
             image: logoUrl,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            shape: qrShape as any,
             dotsOptions: {
                 color: fgColor,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 type: dotStyle as any,
             },
-            backgroundOptions: { color: bgColor },
-            cornersSquareOptions: { color: resolvedCorner },
-            cornersDotOptions: { color: resolvedCorner },
+            backgroundOptions: { color: bgColor, round: backgroundRound },
+            cornersSquareOptions: {
+                color: resolvedCorner,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: cornerSquareType as any,
+            },
+            cornersDotOptions: {
+                color: resolvedCorner,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: cornerDotType as any,
+            },
             qrOptions: { errorCorrectionLevel },
             imageOptions: {
                 crossOrigin: "anonymous",

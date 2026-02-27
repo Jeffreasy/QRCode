@@ -107,6 +107,14 @@ export default function CreateQRPage() {
         errorCorrectionLevel: "M",
         logoUrl: undefined as string | undefined,
         cornerColor: undefined as string | undefined,
+        cornerSquareType: undefined as "square" | "dot" | "extra-rounded" | undefined,
+        cornerDotType: undefined as "square" | "dot" | undefined,
+        qrShape: "square" as "square" | "circle",
+        backgroundRound: 0,
+        borderEnabled: false,
+        borderColor: "#38bdf8",
+        borderWidth: 4,
+        borderRadius: 16,
     });
     const [logoInput, setLogoInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -129,7 +137,7 @@ export default function CreateQRPage() {
 
 
     const setCustomField = useCallback(
-        (key: keyof typeof customization, value: string | undefined) =>
+        (key: keyof typeof customization, value: string | boolean | number | undefined) =>
             setCustomization((prev) => ({ ...prev, [key]: value })),
         []
     );
@@ -229,6 +237,14 @@ export default function CreateQRPage() {
                     errorCorrectionLevel: customization.errorCorrectionLevel,
                     logoUrl: customization.logoUrl,
                     cornerColor: customization.cornerColor,
+                    cornerSquareType: customization.cornerSquareType,
+                    cornerDotType: customization.cornerDotType,
+                    qrShape: customization.qrShape,
+                    backgroundRound: customization.backgroundRound,
+                    borderEnabled: customization.borderEnabled,
+                    borderColor: customization.borderColor,
+                    borderWidth: customization.borderWidth,
+                    borderRadius: customization.borderRadius,
                 },
             });
             router.push(`/dashboard/qr/${result.id}`);
@@ -421,30 +437,151 @@ export default function CreateQRPage() {
                                     </div>
                                 </div>
 
-                                {/* Corner color */}
-                                <div>
-                                    <label className="input-label">Hoekkleur <span style={{ color: "var(--color-text-faint)", fontWeight: 400 }}>(optioneel)</span></label>
-                                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                        <input type="color"
-                                            value={customization.cornerColor ?? customization.fgColor}
-                                            onChange={(e) => setCustomField("cornerColor", e.target.value)}
-                                            style={{ width: "40px", height: "40px", border: "none", cursor: "pointer", borderRadius: "6px" }} />
-                                        <input className="input"
-                                            value={customization.cornerColor ?? ""}
-                                            onChange={(e) => setCustomField("cornerColor", e.target.value || undefined)}
-                                            placeholder="Zelfde als voorgrondkleur"
-                                            style={{ flex: 1 }} />
-                                        {customization.cornerColor && (
-                                            <button className="btn btn-ghost btn-sm"
-                                                onClick={() => setCustomField("cornerColor", undefined)}
-                                                style={{ whiteSpace: "nowrap" }}>
-                                                Reset
-                                            </button>
-                                        )}
+                                {/* Corner color + corner style section */}
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                    <div>
+                                        <label className="input-label">Hoekkleur <span style={{ color: "var(--color-text-faint)", fontWeight: 400 }}>(opt.)</span></label>
+                                        <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
+                                            <input type="color"
+                                                value={customization.cornerColor ?? customization.fgColor}
+                                                onChange={(e) => setCustomField("cornerColor", e.target.value)}
+                                                style={{ width: "36px", height: "36px", border: "none", cursor: "pointer", borderRadius: "6px", flexShrink: 0 }} />
+                                            <input className="input"
+                                                value={customization.cornerColor ?? ""}
+                                                onChange={(e) => setCustomField("cornerColor", e.target.value || undefined)}
+                                                placeholder={customization.fgColor}
+                                                style={{ flex: 1, fontSize: "0.75rem" }} />
+                                        </div>
                                     </div>
-                                    <p style={{ fontSize: "0.72rem", color: "var(--color-text-muted)", marginTop: "0.375rem" }}>
-                                        Geef de hoekblokken van de QR code een eigen kleur.
-                                    </p>
+                                    <div>
+                                        <label className="input-label">Hoek type</label>
+                                        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                                            {([undefined, "square", "dot", "extra-rounded"] as const).map((t) => (
+                                                <button key={String(t)} onClick={() => setCustomField("cornerSquareType", t)}
+                                                    style={{
+                                                        padding: "0.375rem 0.625rem", fontSize: "0.72rem", borderRadius: "var(--radius-sm)",
+                                                        background: customization.cornerSquareType === t ? "var(--color-accent-bg)" : "var(--color-bg-2)",
+                                                        border: `1px solid ${customization.cornerSquareType === t ? "var(--color-accent-border-active)" : "var(--color-border)"}`,
+                                                        cursor: "pointer", color: "var(--color-text)",
+                                                        fontWeight: customization.cornerSquareType === t ? 600 : 400,
+                                                    }}>
+                                                    {t === undefined ? "Auto" : t === "extra-rounded" ? "Rond" : t === "dot" ? "Dot" : "Vierkant"}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Corner dot type + QR shape */}
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                                    <div>
+                                        <label className="input-label">Interne hoek stip</label>
+                                        <div style={{ display: "flex", gap: "0.375rem" }}>
+                                            {([undefined, "square", "dot"] as const).map((t) => (
+                                                <button key={String(t)} onClick={() => setCustomField("cornerDotType", t)}
+                                                    style={{
+                                                        flex: 1, padding: "0.375rem 0.5rem", fontSize: "0.72rem", borderRadius: "var(--radius-sm)",
+                                                        background: customization.cornerDotType === t ? "var(--color-accent-bg)" : "var(--color-bg-2)",
+                                                        border: `1px solid ${customization.cornerDotType === t ? "var(--color-accent-border-active)" : "var(--color-border)"}`,
+                                                        cursor: "pointer", color: "var(--color-text)",
+                                                        fontWeight: customization.cornerDotType === t ? 600 : 400,
+                                                    }}>
+                                                    {t === undefined ? "Auto" : t === "dot" ? "Dot" : "Vierkant"}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="input-label">QR Vorm</label>
+                                        <div style={{ display: "flex", gap: "0.375rem" }}>
+                                            {(["square", "circle"] as const).map((s) => (
+                                                <button key={s} onClick={() => setCustomField("qrShape", s)}
+                                                    style={{
+                                                        flex: 1, padding: "0.375rem 0.5rem", fontSize: "0.72rem", borderRadius: "var(--radius-sm)",
+                                                        background: customization.qrShape === s ? "var(--color-accent-bg)" : "var(--color-bg-2)",
+                                                        border: `1px solid ${customization.qrShape === s ? "var(--color-accent-border-active)" : "var(--color-border)"}`,
+                                                        cursor: "pointer", color: "var(--color-text)",
+                                                        fontWeight: customization.qrShape === s ? 600 : 400,
+                                                        display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
+                                                    }}>
+                                                    {s === "square"
+                                                        ? <svg width="12" height="12" fill="currentColor"><rect width="12" height="12" rx="1" /></svg>
+                                                        : <svg width="12" height="12" fill="currentColor"><circle cx="6" cy="6" r="6" /></svg>}
+                                                    {s === "square" ? "Vierkant" : "Cirkel"}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Border frame section */}
+                                <div style={{
+                                    padding: "1rem",
+                                    borderRadius: "var(--radius-md)",
+                                    border: `1px solid ${customization.borderEnabled ? "var(--color-accent-border-active)" : "var(--color-border)"}`,
+                                    background: customization.borderEnabled ? "var(--color-accent-bg)" : "var(--color-surface-2)",
+                                    transition: "var(--transition)",
+                                }}>
+                                    {/* Toggle */}
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: customization.borderEnabled ? "1rem" : 0 }}>
+                                        <div>
+                                            <p style={{ fontWeight: 600, fontSize: "0.875rem", margin: 0 }}>Frame / Border</p>
+                                            <p style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", margin: 0 }}>Zichtbare rand rondom de QR code</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setCustomField("borderEnabled", !customization.borderEnabled)}
+                                            style={{
+                                                width: "44px", height: "24px", borderRadius: "100px",
+                                                background: customization.borderEnabled ? "var(--color-accent)" : "var(--color-surface-3, var(--color-surface-2))",
+                                                border: "none", cursor: "pointer", position: "relative", flexShrink: 0,
+                                                transition: "background 0.2s ease",
+                                            }}
+                                            aria-label={customization.borderEnabled ? "Border uitschakelen" : "Border inschakelen"}
+                                            role="switch"
+                                            aria-checked={customization.borderEnabled}
+                                        >
+                                            <span style={{
+                                                position: "absolute", top: "3px",
+                                                left: customization.borderEnabled ? "23px" : "3px",
+                                                width: "18px", height: "18px", borderRadius: "50%",
+                                                background: "#fff", transition: "left 0.2s ease",
+                                                boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                                            }} />
+                                        </button>
+                                    </div>
+
+                                    {/* Border controls */}
+                                    {customization.borderEnabled && (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                                                <div>
+                                                    <label className="input-label">Kleur</label>
+                                                    <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
+                                                        <input type="color" value={customization.borderColor}
+                                                            onChange={(e) => setCustomField("borderColor", e.target.value)}
+                                                            style={{ width: "36px", height: "36px", border: "none", cursor: "pointer", borderRadius: "6px", flexShrink: 0 }} />
+                                                        <input className="input" value={customization.borderColor}
+                                                            onChange={(e) => setCustomField("borderColor", e.target.value)}
+                                                            style={{ flex: 1, fontSize: "0.75rem" }} />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="input-label">Dikte — {customization.borderWidth}px</label>
+                                                    <input type="range" min={1} max={12} step={1}
+                                                        value={customization.borderWidth}
+                                                        onChange={(e) => setCustomField("borderWidth", Number(e.target.value))}
+                                                        style={{ width: "100%", accentColor: "var(--color-accent)", marginTop: "0.5rem" }} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="input-label">Afronding — {customization.borderRadius}px</label>
+                                                <input type="range" min={0} max={40} step={2}
+                                                    value={customization.borderRadius}
+                                                    onChange={(e) => setCustomField("borderRadius", Number(e.target.value))}
+                                                    style={{ width: "100%", accentColor: "var(--color-accent)" }} />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Logo upload — dual mode: file picker + URL */}
@@ -657,6 +794,14 @@ export default function CreateQRPage() {
                             size={220}
                             logoUrl={customization.logoUrl}
                             cornerColor={customization.cornerColor}
+                            cornerSquareType={customization.cornerSquareType}
+                            cornerDotType={customization.cornerDotType}
+                            qrShape={customization.qrShape}
+                            backgroundRound={customization.backgroundRound}
+                            borderEnabled={customization.borderEnabled}
+                            borderColor={customization.borderColor}
+                            borderWidth={customization.borderWidth}
+                            borderRadius={customization.borderRadius}
                         />
                         {selectedType && QR_TYPE_META[selectedType].isDynamic && (
                             <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "var(--color-accent)", fontFamily: "monospace" }}>
