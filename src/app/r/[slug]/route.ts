@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "../../../../convex/_generated/api";
 
 export async function GET(
     req: NextRequest,
@@ -8,10 +6,34 @@ export async function GET(
 ) {
     const { slug } = await params;
 
+    const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!convexUrl) {
+        console.error("[QR Redirect] NEXT_PUBLIC_CONVEX_URL is not set");
+        return NextResponse.redirect(new URL("/not-found", req.url));
+    }
+
     try {
-        const qrCode = await fetchQuery(api.qrCodes.getBySlug, { slug });
+        // Direct Convex HTTP API — no package dependency, works in all runtimes
+        const res = await fetch(`${convexUrl}/api/query`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                path: "qrCodes:getBySlug",
+                args: { slug },
+                format: "json",
+            }),
+        });
+
+        if (!res.ok) {
+            console.error(`[QR Redirect] Convex HTTP error: ${res.status} for slug "${slug}"`);
+            return NextResponse.redirect(new URL("/not-found", req.url));
+        }
+
+        const data = await res.json();
+        const qrCode = data.value;
 
         if (!qrCode || !qrCode.isActive) {
+            console.warn(`[QR Redirect] Slug "${slug}" not found or inactive`);
             return NextResponse.redirect(new URL("/not-found", req.url));
         }
 
@@ -39,28 +61,8 @@ export async function GET(
             }),
         }).catch(() => { });
 
-        // Use HTML redirect — works in all QR scanners, in-app browsers, and mobile browsers
-        // More reliable than HTTP 302 which some QR scanner apps block or ignore
-        const html = `<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="utf-8" />
-  <meta http-equiv="refresh" content="0;url=${redirectUrl}" />
-  <title>Doorsturen...</title>
-  <script>window.location.replace(${JSON.stringify(redirectUrl)});</script>
-</head>
-<body>
-  <p>Je wordt doorgestuurd naar <a href="${redirectUrl}">${redirectUrl}</a>...</p>
-</body>
-</html>`;
-
-        return new NextResponse(html, {
-            status: 200,
-            headers: {
-                "Content-Type": "text/html; charset=utf-8",
-                "Cache-Control": "no-store, no-cache, must-revalidate",
-            },
-        });
+        // HTTP 302 redirect — fast, standard, works everywhere
+        return NextResponse.redirect(redirectUrl, { status: 302 });
     } catch (err) {
         console.error(`[QR Redirect] Error for slug "${slug}":`, err);
         return NextResponse.redirect(new URL("/not-found", req.url));
