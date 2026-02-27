@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     index: process.env.NODE_ENV === "production",
     follow: process.env.NODE_ENV === "production",
   },
+  other: {
+    "color-scheme": "dark",
+  },
 };
 
 export default function RootLayout({
@@ -50,7 +53,14 @@ export default function RootLayout({
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? ""} dynamic afterSignOutUrl="/" appearance={clerkAppearance}>
       <html lang="nl">
+        <head>
+          <meta name="color-scheme" content="dark" />
+        </head>
         <body>
+          {/* Skip to main content — pure CSS, keyboard accessibility (WCAG 2.4.1) */}
+          <a href="#main-content" className="skip-link btn btn-primary btn-sm">
+            Ga naar hoofdinhoud
+          </a>
           <ConvexClientProvider>{children}</ConvexClientProvider>
           <Analytics />
         </body>

@@ -18,10 +18,10 @@
 
   /* Brand accent — electric blue / cyan */
   --color-accent: #38bdf8;
-  --color-accent-2: #818cf8;
+  --color-accent-2: #60a5fa;
   --color-accent-glow: rgba(56, 189, 248, 0.15);
-  --gradient-brand: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-  --gradient-brand-warm: linear-gradient(135deg, #f472b6 0%, #818cf8 50%, #38bdf8 100%);
+  --gradient-brand: linear-gradient(135deg, #38bdf8 0%, #60a5fa 100%);
+  --gradient-brand-warm: linear-gradient(135deg, #f472b6 0%, #38bdf8 50%, #60a5fa 100%);
 
   /* Text */
   --color-text: #f1f5f9;
@@ -416,6 +416,19 @@ body {
   margin: 1rem 0;
 }
 
+/* ============================================
+   BREADCRUMB
+   ============================================ */
+.breadcrumb-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.breadcrumb-link:hover {
+  color: var(--color-text);
+}
+
 
 /* ============================================
    EXTRA DESIGN TOKENS (semantic)
@@ -726,4 +739,23 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================
+   SKIP TO CONTENT
+   ============================================ */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.skip-link:focus-visible {
+  left: 1rem;
+  top: 1rem;
+  opacity: 1;
+  pointer-events: auto;
 }

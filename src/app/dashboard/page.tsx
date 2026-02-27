@@ -401,6 +401,7 @@ function QRCodeCard({
                 flexDirection: "column",
                 gap: "1rem",
                 position: "relative",
+                cursor: "pointer",
                 border: selected ? "1px solid var(--color-accent-border-active)" : undefined,
                 background: selected ? "var(--color-accent-bg)" : undefined,
                 transition: "border-color 0.15s ease, background 0.15s ease",

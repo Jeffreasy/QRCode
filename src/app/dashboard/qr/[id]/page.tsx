@@ -66,6 +66,8 @@ export default function QRDetailPage() {
     // Design edit state
     const [editingDesign, setEditingDesign] = useState(false);
     const [isSavingDesign, setIsSavingDesign] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [designDraft, setDesignDraft] = useState<{
         fgColor: string;
         bgColor: string;
@@ -163,9 +165,14 @@ export default function QRDetailPage() {
     }
 
     async function handleDelete() {
-        if (!confirm(`Weet je zeker dat je '${qrCode!.title}' wil verwijderen?`)) return;
-        await deleteQR({ id: qrId });
-        router.push("/dashboard");
+        setIsDeleting(true);
+        try {
+            await deleteQR({ id: qrId });
+            router.push("/dashboard");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+        }
     }
 
     function handleCopyUrl() {
@@ -308,9 +315,7 @@ export default function QRDetailPage() {
             >
                 <Link
                     href="/dashboard"
-                    style={{ color: "inherit", textDecoration: "none", transition: "color 0.15s ease" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-text)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-text-muted)")}
+                    className="breadcrumb-link"
                 >
                     Dashboard
                 </Link>
@@ -399,14 +404,36 @@ export default function QRDetailPage() {
                         {qrCode.isActive ? "Deactiveren" : "Activeren"}
                     </button>
 
-                    <button
-                        className="btn btn-danger btn-sm"
-                        onClick={handleDelete}
-                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
-                    >
-                        <TrashIcon size={14} />
-                        Verwijderen
-                    </button>
+                    {/* Inline delete bevestiging */}
+                    {!showDeleteConfirm ? (
+                        <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => setShowDeleteConfirm(true)}
+                            style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                        >
+                            <TrashIcon size={14} />
+                            Verwijderen
+                        </button>
+                    ) : (
+                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                            <span style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>Weet je het zeker?</span>
+                            <button
+                                className="btn btn-danger btn-sm"
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                            >
+                                <TrashIcon size={14} />
+                                {isDeleting ? "Verwijderen..." : "Ja, verwijder"}
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                Annuleren
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

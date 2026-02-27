@@ -87,10 +87,13 @@ export default function HomePage() {
       <nav
         className="glass"
         style={{
-          position: "sticky",
-          top: 0,
+          position: "fixed",
+          top: "0.875rem",
+          left: "0.875rem",
+          right: "0.875rem",
           zIndex: 50,
-          borderBottom: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-xl)",
+          border: "1px solid var(--color-border)",
         }}
         aria-label="Hoofdnavigatie"
       >
@@ -98,11 +101,11 @@ export default function HomePage() {
           style={{
             maxWidth: "1200px",
             margin: "0 auto",
-            padding: "0 1rem",
+            padding: "0 1.25rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "60px",
+            height: "56px",
             gap: "0.5rem",
           }}
         >
@@ -166,11 +169,13 @@ export default function HomePage() {
 
       {/* Hero section */}
       <section
+        id="hero"
         className="hero-section animate-fade-in-up"
         style={{
           maxWidth: "900px",
           margin: "0 auto",
           textAlign: "center",
+          paddingTop: "5rem",
         }}
       >
         {/* Badge */}
@@ -224,9 +229,9 @@ export default function HomePage() {
           <Link href="/sign-up" className="btn btn-primary btn-lg">
             Start gratis
           </Link>
-          <Link href="/sign-in" className="btn btn-secondary btn-lg">
-            Demo bekijken
-          </Link>
+          <a href="#features" className="btn btn-secondary btn-lg">
+            Bekijk functies
+          </a>
         </div>
 
         {/* Stats */}
@@ -272,6 +277,7 @@ export default function HomePage() {
 
       {/* Features section */}
       <section
+        id="features"
         className="features-section"
         style={{
           maxWidth: "1100px",
