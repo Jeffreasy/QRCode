@@ -463,7 +463,7 @@ export default function CreateQRPage() {
                         <QRPreview
                             value={
                                 selectedType && QR_TYPE_META[selectedType].isDynamic
-                                    ? `${typeof window !== "undefined" ? window.location.origin : "https://yourapp.com"}/r/preview`
+                                    ? `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || (typeof window !== "undefined" ? window.location.origin : "https://qrcodemaster.app")}/r/preview`
                                     : computedDestination || "https://qrcodemaster.app"
                             }
                             fgColor={customization.fgColor}

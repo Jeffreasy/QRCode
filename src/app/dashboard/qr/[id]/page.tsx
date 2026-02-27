@@ -79,9 +79,21 @@ export default function QRDetailPage() {
     }
 
     const typeMeta = QR_TYPE_META[qrCode.type as keyof typeof QR_TYPE_META];
-    const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-        (typeof window !== "undefined" ? window.location.origin : "");
+
+    // Always resolve to an absolute URL so QR codes work when scanned.
+    // Priority: NEXT_PUBLIC_SITE_URL env var → window.location.origin (client-only fallback)
+    const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    const clientOrigin = typeof window !== "undefined" ? window.location.origin : "";
+    const siteUrl = envSiteUrl || clientOrigin;
+
+    if (process.env.NODE_ENV === "production" && !envSiteUrl) {
+        console.warn(
+            "[QRCodeMaster] NEXT_PUBLIC_SITE_URL is not set! " +
+            "QR codes may contain localhost URLs. " +
+            "Add NEXT_PUBLIC_SITE_URL to Vercel → Settings → Environment Variables."
+        );
+    }
+
     const redirectUrl = `${siteUrl}/r/${qrCode.slug}`;
 
     async function handleSaveDest() {
