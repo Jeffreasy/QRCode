@@ -1,4 +1,5 @@
 import { SignIn } from "@clerk/nextjs";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 
 export default function SignInPage() {
     return (
@@ -31,8 +32,9 @@ export default function SignInPage() {
                         Welkom terug
                     </p>
                 </div>
-                <SignIn />
+                <SignIn appearance={clerkAppearance} />
             </div>
         </div>
     );
 }
+

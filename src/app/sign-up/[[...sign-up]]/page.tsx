@@ -1,4 +1,5 @@
 import { SignUp } from "@clerk/nextjs";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 
 export default function SignUpPage() {
     return (
@@ -31,8 +32,9 @@ export default function SignUpPage() {
                         Maak gratis een account aan
                     </p>
                 </div>
-                <SignUp />
+                <SignUp appearance={clerkAppearance} />
             </div>
         </div>
     );
 }
+

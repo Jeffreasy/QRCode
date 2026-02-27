@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 import "./globals.css";
+
 
 const rawSiteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -46,7 +48,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? ""} dynamic afterSignOutUrl="/">
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? ""} dynamic afterSignOutUrl="/" appearance={clerkAppearance}>
       <html lang="nl">
         <body>
           <ConvexClientProvider>{children}</ConvexClientProvider>
