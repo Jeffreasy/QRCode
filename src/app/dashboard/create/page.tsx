@@ -463,7 +463,7 @@ export default function CreateQRPage() {
                         <QRPreview
                             value={
                                 selectedType && QR_TYPE_META[selectedType].isDynamic
-                                    ? `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || (typeof window !== "undefined" ? window.location.origin : "https://qrcodemaster.app")}/r/preview`
+                                    ? `${(typeof window !== "undefined" ? window.location.origin : null) ?? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.jeffdash.com"}/r/preview`
                                     : computedDestination || "https://qrcodemaster.app"
                             }
                             fgColor={customization.fgColor}

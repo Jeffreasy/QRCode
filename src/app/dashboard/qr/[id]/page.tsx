@@ -81,18 +81,11 @@ export default function QRDetailPage() {
     const typeMeta = QR_TYPE_META[qrCode.type as keyof typeof QR_TYPE_META];
 
     // Always resolve to an absolute URL so QR codes work when scanned.
-    // Priority: NEXT_PUBLIC_SITE_URL env var → window.location.origin (client-only fallback)
-    const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    // Priority: window.location.origin (always correct on client) → NEXT_PUBLIC_SITE_URL fallback
+    // NOTE: This is a "use client" component so window is always available.
     const clientOrigin = typeof window !== "undefined" ? window.location.origin : "";
-    const siteUrl = envSiteUrl || clientOrigin;
-
-    if (process.env.NODE_ENV === "production" && !envSiteUrl) {
-        console.warn(
-            "[QRCodeMaster] NEXT_PUBLIC_SITE_URL is not set! " +
-            "QR codes may contain localhost URLs. " +
-            "Add NEXT_PUBLIC_SITE_URL to Vercel → Settings → Environment Variables."
-        );
-    }
+    const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+    const siteUrl = clientOrigin || envSiteUrl || "https://www.jeffdash.com";
 
     const redirectUrl = `${siteUrl}/r/${qrCode.slug}`;
 
