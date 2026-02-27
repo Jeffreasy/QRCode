@@ -177,12 +177,13 @@ export default function CreateQRPage() {
             }
             // 1. Get a short-lived upload URL from Convex
             const uploadUrl = await generateUploadUrl();
-            // 2. PUT the file directly to Convex storage
+            // 2. POST the file directly to Convex storage (Convex requires POST, not PUT)
             const putRes = await fetch(uploadUrl, {
-                method: "PUT",
+                method: "POST",
                 headers: { "Content-Type": file.type },
                 body: file,
             });
+
             if (!putRes.ok) throw new Error("Upload mislukt.");
             const { storageId } = await putRes.json();
             // 3. Get the public URL
