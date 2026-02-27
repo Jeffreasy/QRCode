@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/next";
 import ConvexClientProvider from "@/components/providers/ConvexClientProvider";
 import "./globals.css";
 
@@ -49,6 +50,7 @@ export default function RootLayout({
       <html lang="nl">
         <body>
           <ConvexClientProvider>{children}</ConvexClientProvider>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

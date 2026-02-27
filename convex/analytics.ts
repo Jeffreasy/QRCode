@@ -36,10 +36,12 @@ export const logScan = mutation({
 
 // Get aggregate stats for a single QR code
 export const getScanStats = query({
-    args: { qrCodeId: v.id("qr_codes"), userId: v.string() },
+    args: { qrCodeId: v.id("qr_codes") },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return null;
         const qrCode = await ctx.db.get(args.qrCodeId);
-        if (!qrCode || qrCode.userId !== args.userId) return null;
+        if (!qrCode || qrCode.userId !== identity.subject) return null;
 
         const events = await ctx.db
             .query("scan_events")
@@ -73,12 +75,13 @@ export const getScanStats = query({
 export const getScansByDay = query({
     args: {
         qrCodeId: v.id("qr_codes"),
-        userId: v.string(),
         days: v.number(),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return [];
         const qrCode = await ctx.db.get(args.qrCodeId);
-        if (!qrCode || qrCode.userId !== args.userId) return [];
+        if (!qrCode || qrCode.userId !== identity.subject) return [];
 
         const since = Date.now() - args.days * 24 * 60 * 60 * 1000;
 
@@ -114,10 +117,12 @@ export const getScansByDay = query({
 
 // Get recent scans for a QR code (for event feed)
 export const getRecentScans = query({
-    args: { qrCodeId: v.id("qr_codes"), userId: v.string(), limit: v.number() },
+    args: { qrCodeId: v.id("qr_codes"), limit: v.number() },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return [];
         const qrCode = await ctx.db.get(args.qrCodeId);
-        if (!qrCode || qrCode.userId !== args.userId) return [];
+        if (!qrCode || qrCode.userId !== identity.subject) return [];
 
         return await ctx.db
             .query("scan_events")

@@ -13,10 +13,7 @@ import {
 
 export default function DashboardPage() {
     const { user } = useUser();
-    const qrCodes = useQuery(
-        api.qrCodes.listByUser,
-        user ? { userId: user.id } : "skip"
-    );
+    const qrCodes = useQuery(api.qrCodes.listByUser);
 
     const totalScans = qrCodes?.reduce((sum, qr) => sum + qr.totalScans, 0) ?? 0;
     const activeCount = qrCodes?.filter((qr) => qr.isActive).length ?? 0;

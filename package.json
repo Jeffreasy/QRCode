@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.38.3",
+    "@vercel/analytics": "^1.6.1",
     "convex": "^1.32.0",
     "nanoid": "^5.1.6",
     "next": "15.3.9",

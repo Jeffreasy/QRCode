@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -29,7 +28,6 @@ import {
 export default function QRDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const { user } = useUser();
     const [editingDest, setEditingDest] = useState(false);
     const [newDest, setNewDest] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -38,17 +36,17 @@ export default function QRDetailPage() {
 
     const qrCode = useQuery(
         api.qrCodes.getById,
-        user ? { id: qrId, userId: user.id } : "skip"
+        { id: qrId }
     );
 
     const scanStats = useQuery(
         api.analytics.getScanStats,
-        user ? { qrCodeId: qrId, userId: user.id } : "skip"
+        { qrCodeId: qrId }
     );
 
     const scansByDay = useQuery(
         api.analytics.getScansByDay,
-        user ? { qrCodeId: qrId, userId: user.id, days: 30 } : "skip"
+        { qrCodeId: qrId, days: 30 }
     );
 
     const updateDest = useMutation(api.qrCodes.updateDestination);
