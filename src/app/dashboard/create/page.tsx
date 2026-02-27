@@ -871,6 +871,9 @@ export default function CreateQRPage() {
                             borderColor={customization.borderColor}
                             borderWidth={customization.borderWidth}
                             borderRadius={customization.borderRadius}
+                            logoSize={customization.logoSize}
+                            logoMargin={customization.logoMargin}
+                            logoHideDots={customization.logoHideDots}
                         />
                         {selectedType && QR_TYPE_META[selectedType].isDynamic && (
                             <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "var(--color-accent)", fontFamily: "monospace" }}>

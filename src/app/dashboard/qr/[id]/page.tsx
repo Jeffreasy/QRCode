@@ -59,6 +59,9 @@ export default function QRDetailPage() {
         borderColor: string;
         borderWidth: number;
         borderRadius: number;
+        logoSize: number;
+        logoMargin: number;
+        logoHideDots: boolean;
     } | null>(null);
 
     const qrId = params.id as Id<"qr_codes">;
@@ -158,6 +161,9 @@ export default function QRDetailPage() {
             borderColor: qrCode!.customization?.borderColor ?? "#38bdf8",
             borderWidth: qrCode!.customization?.borderWidth ?? 4,
             borderRadius: qrCode!.customization?.borderRadius ?? 16,
+            logoSize: qrCode!.customization?.logoSize ?? 0.35,
+            logoMargin: qrCode!.customization?.logoMargin ?? 4,
+            logoHideDots: qrCode!.customization?.logoHideDots ?? true,
         });
         setEditingDesign(true);
     }
@@ -183,6 +189,9 @@ export default function QRDetailPage() {
                     borderColor: designDraft.borderColor,
                     borderWidth: designDraft.borderWidth,
                     borderRadius: designDraft.borderRadius,
+                    logoSize: designDraft.logoSize,
+                    logoMargin: designDraft.logoMargin,
+                    logoHideDots: designDraft.logoHideDots,
                 },
             });
             setEditingDesign(false);
@@ -207,6 +216,9 @@ export default function QRDetailPage() {
         borderColor: qrCode.customization?.borderColor ?? "#38bdf8",
         borderWidth: qrCode.customization?.borderWidth ?? 4,
         borderRadius: qrCode.customization?.borderRadius ?? 16,
+        logoSize: qrCode.customization?.logoSize ?? 0.35,
+        logoMargin: qrCode.customization?.logoMargin ?? 4,
+        logoHideDots: qrCode.customization?.logoHideDots ?? true,
     };
 
     const DETAIL_STATS = [
@@ -407,6 +419,9 @@ export default function QRDetailPage() {
                             borderColor={activeCustom.borderColor}
                             borderWidth={activeCustom.borderWidth}
                             borderRadius={activeCustom.borderRadius}
+                            logoSize={activeCustom.logoSize}
+                            logoMargin={activeCustom.logoMargin}
+                            logoHideDots={activeCustom.logoHideDots}
                         />
 
                         {/* Redirect destination info */}
@@ -617,6 +632,9 @@ export default function QRDetailPage() {
                         cornerDotType={(activeCustom.cornerDotType || undefined) as "square" | "dot" | undefined}
                         qrShape={activeCustom.qrShape}
                         backgroundRound={activeCustom.backgroundRound}
+                        logoSize={activeCustom.logoSize}
+                        logoMargin={activeCustom.logoMargin}
+                        logoHideDots={activeCustom.logoHideDots}
                     />
 
                 </div>
