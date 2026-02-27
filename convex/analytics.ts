@@ -133,3 +133,59 @@ export const getRecentScans = query({
             .take(args.limit);
     },
 });
+
+// Global analytics across ALL QR codes for the authenticated user
+export const getGlobalScanStats = query({
+    args: {
+        days: v.optional(v.number()), // default 30
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return null;
+
+        const days = args.days ?? 30;
+        const since = Date.now() - days * 24 * 60 * 60 * 1000;
+
+        const events = await ctx.db
+            .query("scan_events")
+            .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+            .filter((q) => q.gte(q.field("scannedAt"), since))
+            .collect();
+
+        const deviceCounts: Record<string, number> = {};
+        const browserCounts: Record<string, number> = {};
+        const countryCounts: Record<string, number> = {};
+        const byDay: Record<string, number> = {};
+
+        // Pre-fill all days
+        for (let i = 0; i < days; i++) {
+            const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+            const key = d.toISOString().split("T")[0];
+            byDay[key] = 0;
+        }
+
+        for (const e of events) {
+            const dev = e.device ?? "Unknown";
+            const br = e.browser ?? "Unknown";
+            const co = e.country ?? "Unknown";
+            deviceCounts[dev] = (deviceCounts[dev] ?? 0) + 1;
+            browserCounts[br] = (browserCounts[br] ?? 0) + 1;
+            countryCounts[co] = (countryCounts[co] ?? 0) + 1;
+
+            const key = new Date(e.scannedAt).toISOString().split("T")[0];
+            if (byDay[key] !== undefined) byDay[key] += 1;
+        }
+
+        const scansByDay = Object.entries(byDay)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, count]) => ({ date, count }));
+
+        return {
+            total: events.length,
+            scansByDay,
+            deviceBreakdown: deviceCounts,
+            browserBreakdown: browserCounts,
+            countryBreakdown: countryCounts,
+        };
+    },
+});

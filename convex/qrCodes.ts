@@ -255,17 +255,67 @@ export const deleteQRCode = mutation({
     },
 });
 
-// List all QR codes for the authenticated user
+// List all QR codes for the authenticated user (with optional cursor pagination)
 export const listByUser = query({
-    args: {},
-    handler: async (ctx) => {
+    args: {
+        limit: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) return [];
+        const limit = args.limit ?? 100;
         return await ctx.db
             .query("qr_codes")
             .withIndex("by_user", (q) => q.eq("userId", identity.subject))
             .order("desc")
-            .collect();
+            .take(limit);
+    },
+});
+
+// Duplicate an existing QR code with a new slug and title
+export const duplicateQRCode = mutation({
+    args: {
+        id: v.id("qr_codes"),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const userId = identity.subject;
+
+        const source = await ctx.db.get(args.id);
+        if (!source || source.userId !== userId) {
+            throw new Error("QR code niet gevonden of geen toegang.");
+        }
+
+        // Generate a unique new slug
+        let slug = generateSlug();
+        let existing = await ctx.db
+            .query("qr_codes")
+            .withIndex("by_slug", (q) => q.eq("slug", slug))
+            .first();
+        while (existing) {
+            slug = generateSlug();
+            existing = await ctx.db
+                .query("qr_codes")
+                .withIndex("by_slug", (q) => q.eq("slug", slug))
+                .first();
+        }
+
+        const now = Date.now();
+        const newId = await ctx.db.insert("qr_codes", {
+            userId,
+            slug,
+            type: source.type,
+            destination: source.destination,
+            title: `${source.title} (kopie)`,
+            isActive: false, // start as inactive to avoid accidental redirects
+            customization: source.customization,
+            totalScans: 0,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        return { id: newId, slug };
     },
 });
 

@@ -23,7 +23,21 @@ import {
     ChevronRightIcon,
     EditIcon,
     XIcon,
+    CopyIcon,
+    DownloadIcon,
 } from "@/components/ui/icons";
+
+// Browser icon (not in icons.tsx yet — inline for now)
+function BrowserIcon({ size = 16 }: { size?: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+    );
+}
+
+
 
 const DOT_STYLES = [
     { value: "square", label: "Vierkant" },
@@ -40,6 +54,14 @@ export default function QRDetailPage() {
     const [newDest, setNewDest] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    // Inline title editing
+    const [editingTitle, setEditingTitle] = useState(false);
+    const [newTitle, setNewTitle] = useState("");
+    const [isSavingTitle, setIsSavingTitle] = useState(false);
+
+    // Duplicate state
+    const [isDuplicating, setIsDuplicating] = useState(false);
 
     // Design edit state
     const [editingDesign, setEditingDesign] = useState(false);
@@ -85,6 +107,14 @@ export default function QRDetailPage() {
     const toggleActive = useMutation(api.qrCodes.toggleActive);
     const deleteQR = useMutation(api.qrCodes.deleteQRCode);
     const updateCustomization = useMutation(api.qrCodes.updateCustomization);
+    const updateTitle = useMutation(api.qrCodes.updateTitle);
+    const duplicateQR = useMutation(api.qrCodes.duplicateQRCode);
+
+    // Recent scans feed (last 10)
+    const recentScans = useQuery(
+        api.analytics.getRecentScans,
+        { qrCodeId: qrId, limit: 10 }
+    );
 
     if (qrCode === undefined) {
         return (
@@ -143,6 +173,48 @@ export default function QRDetailPage() {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });
+    }
+
+    async function handleSaveTitle() {
+        if (!newTitle.trim()) return;
+        setIsSavingTitle(true);
+        try {
+            await updateTitle({ id: qrId, title: newTitle.trim() });
+            setEditingTitle(false);
+        } finally {
+            setIsSavingTitle(false);
+        }
+    }
+
+    async function handleDuplicate() {
+        setIsDuplicating(true);
+        try {
+            const result = await duplicateQR({ id: qrId });
+            router.push(`/dashboard/qr/${result.id}`);
+        } finally {
+            setIsDuplicating(false);
+        }
+    }
+
+    function handleExportCSV() {
+        if (!recentScans || recentScans.length === 0) return;
+        const header = "Tijdstip,Land,Stad,Apparaat,Browser,OS";
+        const rows = recentScans.map((s) => [
+            new Date(s.scannedAt).toISOString(),
+            s.country ?? "",
+            s.city ?? "",
+            s.device ?? "",
+            s.browser ?? "",
+            s.os ?? "",
+        ].map(v => `"${v}"`).join(","));
+        const csv = [header, ...rows].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `scans_${qrCode!.slug}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     function openDesignEdit() {
@@ -253,7 +325,38 @@ export default function QRDetailPage() {
                         {typeMeta?.icon && (
                             <span style={{ fontSize: "1.5rem" }}>{typeMeta.icon}</span>
                         )}
-                        <h1 style={{ fontSize: "1.75rem", fontWeight: 800 }}>{qrCode.title}</h1>
+                        {/* Inline title edit */}
+                        {editingTitle ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <input
+                                    className="input"
+                                    value={newTitle}
+                                    onChange={(e) => setNewTitle(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+                                    autoFocus
+                                    style={{ fontSize: "1.3rem", fontWeight: 700, minWidth: "240px" }}
+                                />
+                                <button className="btn btn-primary btn-sm" onClick={handleSaveTitle} disabled={isSavingTitle}>
+                                    {isSavingTitle ? "..." : "Opslaan"}
+                                </button>
+                                <button className="btn btn-ghost btn-sm" onClick={() => setEditingTitle(false)}>
+                                    <XIcon size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                <h1 style={{ fontSize: "1.75rem", fontWeight: 800 }}>{qrCode.title}</h1>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => { setNewTitle(qrCode.title); setEditingTitle(true); }}
+                                    aria-label="Titel bewerken"
+                                    title="Titel bewerken"
+                                    style={{ padding: "0.25rem", color: "var(--color-text-faint)" }}
+                                >
+                                    <EditIcon size={15} />
+                                </button>
+                            </div>
+                        )}
                         <span
                             style={{
                                 display: "inline-flex",
@@ -276,7 +379,17 @@ export default function QRDetailPage() {
                         /r/{qrCode.slug}
                     </p>
                 </div>
-                <div style={{ display: "flex", gap: "0.75rem" }}>
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleDuplicate}
+                        disabled={isDuplicating}
+                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                        title="Dupliceer deze QR code"
+                    >
+                        <CopyIcon size={14} />
+                        {isDuplicating ? "..." : "Dupliceren"}
+                    </button>
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={handleToggle}
@@ -285,6 +398,7 @@ export default function QRDetailPage() {
                         {qrCode.isActive ? <BanIcon size={14} /> : <CheckIcon size={14} />}
                         {qrCode.isActive ? "Deactiveren" : "Activeren"}
                     </button>
+
                     <button
                         className="btn btn-danger btn-sm"
                         onClick={handleDelete}
@@ -700,6 +814,88 @@ export default function QRDetailPage() {
                         logoHideDots={activeCustom.logoHideDots}
                     />
 
+                </div>
+            </div>
+
+            {/* Bottom section: browser breakdown + recent scans feed */}
+            <div style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "1.5rem" }}>
+                {/* Browser breakdown */}
+                {scanStats && (
+                    <div className="card" style={{ padding: "1.25rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-accent)" }}>
+                                <BrowserIcon size={14} />
+                            </div>
+                            <h4 style={{ fontWeight: 700, fontSize: "0.9rem", margin: 0 }}>Browser verdeling</h4>
+                        </div>
+                        <BreakdownCard title="" data={scanStats.browserBreakdown} />
+                    </div>
+                )}
+
+                {/* Recent scans feed */}
+                <div className="card" style={{ padding: "1.25rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-accent)" }}>
+                                <ZapIcon size={14} />
+                            </div>
+                            <h4 style={{ fontWeight: 700, fontSize: "0.9rem", margin: 0 }}>Recente scans</h4>
+                        </div>
+                        {recentScans && recentScans.length > 0 && (
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={handleExportCSV}
+                                style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem" }}
+                                title="Exporteer scan data als CSV"
+                            >
+                                <DownloadIcon size={13} />
+                                CSV
+                            </button>
+                        )}
+                    </div>
+                    {!recentScans ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            {[1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: "48px", borderRadius: "var(--radius-sm)" }} />)}
+                        </div>
+                    ) : recentScans.length === 0 ? (
+                        <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", textAlign: "center", padding: "1rem 0" }}>
+                            Nog geen scans geregistreerd.
+                        </p>
+                    ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                            {recentScans.map((scan) => (
+                                <div
+                                    key={scan._id as string}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                        padding: "0.625rem 0.75rem",
+                                        background: "var(--color-surface-2)",
+                                        borderRadius: "var(--radius-sm)",
+                                        fontSize: "0.8125rem",
+                                    }}
+                                >
+                                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <SmartphoneIcon size={13} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 500, color: "var(--color-text)" }}>
+                                            {scan.country ?? "Onbekend land"}{scan.city ? ` · ${scan.city}` : ""}
+                                        </div>
+                                        <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)" }}>
+                                            {scan.device ?? "?"} · {scan.browser ?? "?"} · {scan.os ?? "?"}
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)", flexShrink: 0, whiteSpace: "nowrap" }}>
+                                        {new Date(scan.scannedAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
+                                        <br />
+                                        <span style={{ fontSize: "0.65rem" }}>{new Date(scan.scannedAt).toLocaleDateString("nl-NL")}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -10,12 +10,15 @@ import {
     QrCodeIcon,
     MenuIcon,
     XIcon,
+    BarChartIcon,
 } from "@/components/ui/icons";
 
 const navItems = [
     { href: "/dashboard", icon: LayoutDashboardIcon, label: "Dashboard" },
     { href: "/dashboard/create", icon: PlusIcon, label: "QR Aanmaken" },
+    { href: "/dashboard/analytics", icon: BarChartIcon, label: "Analytics" },
 ];
+
 
 export default function DashboardLayout({
     children,
