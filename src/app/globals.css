@@ -717,6 +717,82 @@ body {
 }
 
 /* ============================================
+   DASHBOARD — RESPONSIVE FILTER BAR
+   ============================================ */
+
+/* Stats grid: 2 columns on mobile, 3 on sm+ */
+.dashboard-stats-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+}
+
+@media (min-width: 640px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Filter bar: full-width column stack on mobile */
+.dashboard-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+}
+
+.dashboard-filter-bar .dashboard-filter-search {
+  width: 100%;
+  position: relative;
+}
+
+.dashboard-filter-bar .dashboard-filter-search input {
+  width: 100%;
+}
+
+.dashboard-filter-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.dashboard-filter-select {
+  width: 100% !important;
+  min-width: 0 !important;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.dashboard-filter-cta {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .dashboard-filter-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .dashboard-filter-bar .dashboard-filter-search {
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .dashboard-filter-selects {
+    display: contents;
+    /* unwrap grid — children join flex row */
+  }
+
+  .dashboard-filter-select {
+    width: auto !important;
+  }
+
+  .dashboard-filter-cta {
+    width: auto;
+  }
+}
+
+/* ============================================
    FOCUS VISIBLE — Global accessible focus ring
    ============================================ */
 :focus-visible {

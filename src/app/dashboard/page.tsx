@@ -153,7 +153,8 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
+        <div id="main-content" className="dashboard-main" style={{ padding: "clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)" }}>
+
             {/* Header */}
             <div style={{ marginBottom: "2rem" }}>
                 <h1 style={{ fontSize: "clamp(1.25rem, 5vw, 1.75rem)", fontWeight: 800, marginBottom: "0.25rem" }}>
@@ -167,7 +168,7 @@ export default function DashboardPage() {
             {/* Stats row */}
             <div
                 className="dashboard-stats-grid"
-                style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "2rem" }}
+                style={{ display: "grid", gap: "1rem", marginBottom: "2rem" }}
             >
                 {STATS.map(({ label, value, Icon, color, bg, border }) => (
                     <div key={label} className="card" style={{ padding: "1.25rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -183,9 +184,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Search + Filter + Sort bar */}
-            <div style={{ marginBottom: "1.25rem", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+            <div className="dashboard-filter-bar">
                 {/* Search */}
-                <div style={{ flex: 1, minWidth: "200px", position: "relative" }}>
+                <div className="dashboard-filter-search">
                     <svg
                         width="15" height="15"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -196,53 +197,54 @@ export default function DashboardPage() {
                     </svg>
                     <input
                         className="input"
-                        placeholder="Zoeken op naam, slug of type..."
+                        placeholder="Zoeken..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        style={{ paddingLeft: "2.25rem", fontSize: "0.875rem" }}
+                        style={{ paddingLeft: "2.25rem", fontSize: "0.875rem", width: "100%" }}
                     />
                 </div>
 
-                {/* Type filter */}
-                <select
-                    className="input"
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    style={{ width: "auto", fontSize: "0.8125rem", paddingRight: "2rem", cursor: "pointer" }}
-                >
-                    <option value="all">Alle types</option>
-                    {QR_TYPES.map((t) => (
-                        <option key={t} value={t}>{t.toUpperCase()}</option>
-                    ))}
-                </select>
+                {/* Selects grid — 2 columns on mobile, inline on sm+ */}
+                <div className="dashboard-filter-selects">
+                    <select
+                        className="input dashboard-filter-select"
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                    >
+                        <option value="all">Alle types</option>
+                        {QR_TYPES.map((t) => (
+                            <option key={t} value={t}>{t.toUpperCase()}</option>
+                        ))}
+                    </select>
 
-                {/* Status filter */}
-                <select
-                    className="input"
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as "all" | "active" | "inactive")}
-                    style={{ width: "auto", fontSize: "0.8125rem", paddingRight: "2rem", cursor: "pointer" }}
-                >
-                    <option value="all">Alle status</option>
-                    <option value="active">Actief</option>
-                    <option value="inactive">Inactief</option>
-                </select>
+                    <select
+                        className="input dashboard-filter-select"
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value as "all" | "active" | "inactive")}
+                    >
+                        <option value="all">Alle status</option>
+                        <option value="active">Actief</option>
+                        <option value="inactive">Inactief</option>
+                    </select>
 
-                {/* Sort */}
-                <select
-                    className="input"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortKey)}
-                    style={{ width: "auto", fontSize: "0.8125rem", paddingRight: "2rem", cursor: "pointer" }}
-                >
-                    <option value="date">Nieuwste eerst</option>
-                    <option value="scans">Meeste scans</option>
-                    <option value="title">Op naam</option>
-                    <option value="type">Op type</option>
-                </select>
+                    <select
+                        className="input dashboard-filter-select"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as SortKey)}
+                    >
+                        <option value="date">Nieuwste eerst</option>
+                        <option value="scans">Meeste scans</option>
+                        <option value="title">Op naam</option>
+                        <option value="type">Op type</option>
+                    </select>
+                </div>
 
                 {/* New QR button */}
-                <Link href="/dashboard/create" className="btn btn-primary btn-sm" style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexShrink: 0 }}>
+                <Link
+                    href="/dashboard/create"
+                    className="btn btn-primary btn-sm dashboard-filter-cta"
+                    style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}
+                >
                     <PlusIcon size={15} />
                     Nieuwe QR code
                 </Link>
