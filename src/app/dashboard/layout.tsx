@@ -9,9 +9,9 @@ import {
     PlusIcon,
     QrCodeIcon,
     MenuIcon,
-    XIcon,
     BarChartIcon,
 } from "@/components/ui/icons";
+
 
 const navItems = [
     { href: "/dashboard", icon: LayoutDashboardIcon, label: "Dashboard" },
