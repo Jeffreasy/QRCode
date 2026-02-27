@@ -580,6 +580,69 @@ export default function QRDetailPage() {
                                     />
                                 </div>
 
+                                {/* Logo options — only when logo is active */}
+                                {designDraft.logoUrl && (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "0.875rem", background: "var(--color-surface-2)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-border)" }}>
+                                        <p style={{ fontSize: "0.75rem", fontWeight: 600, margin: 0, color: "var(--color-text)" }}>Logo opties</p>
+
+                                        {/* Zoom */}
+                                        <div>
+                                            <label className="input-label" style={{ display: "flex", justifyContent: "space-between" }}>
+                                                <span>Grootte (zoom)</span>
+                                                <span style={{ color: "var(--color-accent)", fontWeight: 500 }}>{Math.round((designDraft.logoSize ?? 0.35) * 100)}%</span>
+                                            </label>
+                                            <input type="range" min={10} max={50} step={1}
+                                                value={Math.round((designDraft.logoSize ?? 0.35) * 100)}
+                                                onChange={(e) => setDesignDraft(d => d ? { ...d, logoSize: Number(e.target.value) / 100 } : d)}
+                                                style={{ width: "100%", accentColor: "var(--color-accent)" }} />
+                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", color: "var(--color-text-faint)", marginTop: "0.125rem" }}>
+                                                <span>Klein (10%)</span>
+                                                <span>Groot (50%)</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Margin */}
+                                        <div>
+                                            <label className="input-label" style={{ display: "flex", justifyContent: "space-between" }}>
+                                                <span>Witruimte rondom</span>
+                                                <span style={{ color: "var(--color-accent)", fontWeight: 500 }}>{designDraft.logoMargin ?? 4}px</span>
+                                            </label>
+                                            <input type="range" min={0} max={20} step={1}
+                                                value={designDraft.logoMargin ?? 4}
+                                                onChange={(e) => setDesignDraft(d => d ? { ...d, logoMargin: Number(e.target.value) } : d)}
+                                                style={{ width: "100%", accentColor: "var(--color-accent)" }} />
+                                        </div>
+
+                                        {/* Hide dots toggle */}
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: "0.8125rem", fontWeight: 500 }}>Dots achter logo verbergen</p>
+                                                <p style={{ margin: 0, fontSize: "0.7rem", color: "var(--color-text-muted)" }}>Aanbevolen voor een cleaner resultaat</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setDesignDraft(d => d ? { ...d, logoHideDots: !(d.logoHideDots ?? true) } : d)}
+                                                style={{
+                                                    width: "44px", height: "24px", borderRadius: "100px",
+                                                    background: (designDraft.logoHideDots ?? true) ? "var(--color-accent)" : "var(--color-surface-3, var(--color-surface-2))",
+                                                    border: "none", cursor: "pointer", position: "relative", flexShrink: 0,
+                                                    transition: "background 0.2s ease",
+                                                }}
+                                                role="switch"
+                                                aria-checked={designDraft.logoHideDots ?? true}
+                                                aria-label="Dots achter logo verbergen"
+                                            >
+                                                <span style={{
+                                                    position: "absolute", top: "3px",
+                                                    left: (designDraft.logoHideDots ?? true) ? "23px" : "3px",
+                                                    width: "18px", height: "18px", borderRadius: "50%",
+                                                    background: "#fff", transition: "left 0.2s ease",
+                                                    boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                                                }} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Actions */}
                                 <div style={{ display: "flex", gap: "0.75rem", paddingTop: "0.25rem" }}>
                                     <button
