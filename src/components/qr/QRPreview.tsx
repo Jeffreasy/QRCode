@@ -30,6 +30,15 @@ interface QRPreviewProps extends QRCustomization {
     size?: number;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Get the actual device pixel ratio, capped at 3 to avoid memory issues
+// on ultra-high-DPI screens (iPad Pro 2x = 2, iPhone 15 Pro = 3).
+// ─────────────────────────────────────────────────────────────────────────────
+function getDPR(): number {
+    if (typeof window === "undefined") return 1;
+    return Math.min(window.devicePixelRatio ?? 1, 3);
+}
+
 export default function QRPreview({
     value,
     fgColor = "#000000",
@@ -61,9 +70,16 @@ export default function QRPreview({
         setIsRendering(true);
         ref.current.innerHTML = "";
 
+        // ── Retina / high-DPR fix ────────────────────────────────────────────
+        // Render at physical pixel size, then downscale via CSS so the
+        // canvas density matches the screen — eliminates blurry logos and dots
+        // on iPhone (DPR 2×) and iPad Pro / iPhone 15 Pro (DPR 3×).
+        const dpr = getDPR();
+        const physicalSize = Math.round(size * dpr);
+
         const qr = new QRCodeStyling({
-            width: size,
-            height: size,
+            width: physicalSize,
+            height: physicalSize,
             data: value || "https://qrcodemaster.app",
             image: logoUrl,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,6 +88,7 @@ export default function QRPreview({
                 color: fgColor,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 type: dotStyle as any,
+                roundSize: false, // crispEdges — no integer-rounding artifacts
             },
             backgroundOptions: {
                 color: bgColor,
@@ -97,7 +114,20 @@ export default function QRPreview({
         });
 
         qr.append(ref.current);
-        const timer = setTimeout(() => setIsRendering(false), 150);
+
+        // Scale the rendered canvas/svg back to logical CSS size
+        // so it displays at the correct visual size on all devices.
+        const timer = setTimeout(() => {
+            const canvas = ref.current?.querySelector("canvas");
+            const svg = ref.current?.querySelector("svg");
+            const el = canvas ?? svg;
+            if (el) {
+                (el as HTMLElement).style.width = `${size}px`;
+                (el as HTMLElement).style.height = `${size}px`;
+            }
+            setIsRendering(false);
+        }, 150);
+
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value, fgColor, bgColor, dotStyle, errorCorrectionLevel, size, logoUrl,
@@ -135,10 +165,13 @@ export default function QRPreview({
                         backgroundSize: "200% 100%",
                         animation: "shimmer 1.2s infinite",
                         zIndex: 2,
+                        // Reserve exact visual size to prevent layout shift
+                        width: size,
+                        height: size,
                     }} />
                 )}
 
-                {/* QR Canvas */}
+                {/* QR Canvas — rendered at physicalSize, CSS-scaled to `size` */}
                 <div
                     ref={ref}
                     aria-label="QR code preview"
@@ -148,6 +181,10 @@ export default function QRPreview({
                         transition: "opacity 0.25s ease",
                         borderRadius: "var(--radius-sm)",
                         overflow: "hidden",
+                        // Lock the container to logical size so padding doesn't jump
+                        width: size,
+                        height: size,
+                        flexShrink: 0,
                     }}
                 />
 
