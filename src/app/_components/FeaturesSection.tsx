@@ -12,7 +12,7 @@ export function FeaturesSection() {
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: "1.25rem" }}>
                 {FEATURES.map(({ Icon, title, desc }) => (
-                    <div key={title} className="card glass-hover" style={{ padding: "1.25rem" }}>
+                    <div key={title} className="card" style={{ padding: "1.25rem" }}>
                         <div style={{ width: "40px", height: "40px", borderRadius: "var(--radius-md)", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.875rem", color: "var(--color-accent)", flexShrink: 0 }}>
                             <Icon size={20} />
                         </div>

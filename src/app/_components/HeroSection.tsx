@@ -7,12 +7,14 @@ export function HeroSection() {
         <section
             id="hero"
             className="hero-section animate-fade-in-up"
-            style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center", paddingTop: "5rem" }}
+            style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center", paddingTop: "5.5rem" }}
         >
             {/* Badge */}
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 1rem", borderRadius: "100px", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", fontSize: "0.8125rem", color: "var(--color-accent)", fontWeight: 600, marginBottom: "1.5rem" }}>
-                <SparkleIcon size={14} />
-                Professionele dynamische QR codes
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 1rem", borderRadius: "100px", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", fontSize: "0.8125rem", color: "var(--color-accent)", fontWeight: 600 }}>
+                    <SparkleIcon size={14} />
+                    Professionele dynamische QR codes
+                </div>
             </div>
 
             <h1 style={{ fontSize: "clamp(2rem, 6vw, 4.5rem)", fontWeight: 900, lineHeight: 1.1, marginBottom: "1.25rem", letterSpacing: "-0.02em" }}>

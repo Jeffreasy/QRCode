@@ -33,10 +33,7 @@ export function HomeNav() {
                 <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
                     <SignedOut>
                         <Link href="/sign-in" className="btn btn-ghost btn-sm">Inloggen</Link>
-                        <Link href="/sign-up" className="btn btn-primary btn-sm">
-                            <span className="nav-cta-text">Gratis starten</span>
-                            <span className="nav-cta-short" style={{ display: "none" }}>Start</span>
-                        </Link>
+                        <Link href="/sign-up" className="btn btn-primary btn-sm">Gratis starten</Link>
                     </SignedOut>
                     <SignedIn>
                         <Link href="/dashboard" className="btn btn-primary btn-sm">Dashboard</Link>
