@@ -714,6 +714,12 @@ body {
   .btn-sm:not(.qr-checkbox) {
     min-height: 36px;
   }
+
+  /* Checkbox: smaller but still comfortable */
+  .qr-checkbox {
+    min-height: 28px;
+    min-width: 28px;
+  }
 }
 
 /* ============================================
@@ -750,7 +756,7 @@ body {
 
 .dashboard-filter-selects {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.5rem;
 }
 

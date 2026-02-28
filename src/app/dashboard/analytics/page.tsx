@@ -13,16 +13,8 @@ import {
     ZapIcon,
     ShareIcon,
     MonitorIcon,
+    BrowserIcon,
 } from "@/components/ui/icons";
-
-function BrowserIcon({ size = 16 }: { size?: number }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" />
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-    );
-}
 
 const DAY_OPTIONS = [7, 14, 30, 90] as const;
 
@@ -38,7 +30,7 @@ export default function GlobalAnalyticsPage() {
     }));
 
     return (
-        <div id="main-content" className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
+        <div id="main-content" className="dashboard-main" style={{ padding: "clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)" }}>
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
@@ -51,7 +43,7 @@ export default function GlobalAnalyticsPage() {
                 </div>
 
                 {/* Period picker */}
-                <div style={{ display: "flex", gap: "0.375rem" }}>
+                <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
                     {DAY_OPTIONS.map((d) => (
                         <button
                             key={d}
@@ -150,7 +142,7 @@ export default function GlobalAnalyticsPage() {
 
 function SkeletonRow({ count }: { count: number }) {
     return (
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${count}, 1fr)`, gap: "1.5rem", marginBottom: "1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 240px), 1fr))`, gap: "1.5rem", marginBottom: "1.5rem" }}>
             {Array.from({ length: count }).map((_, i) => (
                 <div key={i} className="skeleton" style={{ height: "200px", borderRadius: "var(--radius-lg)" }} />
             ))}

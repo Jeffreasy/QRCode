@@ -95,7 +95,7 @@ export default function QRDetailPage() {
     ];
 
     return (
-        <div className="dashboard-main" style={{ padding: "2rem 2.5rem" }}>
+        <div className="dashboard-main" style={{ padding: "clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)" }}>
             {/* Breadcrumb */}
             <nav aria-label="Broodkruimelpad" style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
                 <Link href="/dashboard" className="breadcrumb-link">Dashboard</Link>
@@ -111,11 +111,11 @@ export default function QRDetailPage() {
 
                         {/* Inline title edit */}
                         {actions.editingTitle ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: 1, minWidth: 0 }}>
                                 <input className="input" value={actions.newTitle}
                                     onChange={(e) => actions.setNewTitle(e.target.value)}
                                     onKeyDown={(e) => e.key === "Enter" && actions.handleSaveTitle()}
-                                    autoFocus style={{ fontSize: "1.3rem", fontWeight: 700, minWidth: "240px" }} />
+                                    autoFocus style={{ fontSize: "1.3rem", fontWeight: 700, minWidth: 0, width: "100%" }} />
                                 <button className="btn btn-primary btn-sm" onClick={actions.handleSaveTitle} disabled={actions.isSavingTitle}>
                                     {actions.isSavingTitle ? "..." : "Opslaan"}
                                 </button>

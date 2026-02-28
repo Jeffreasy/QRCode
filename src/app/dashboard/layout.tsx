@@ -127,8 +127,8 @@ export default function DashboardLayout({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            width: "36px",
-                            height: "36px",
+                            width: "44px",
+                            height: "44px",
                             transition: "var(--transition)",
                             flexShrink: 0,
                         }}

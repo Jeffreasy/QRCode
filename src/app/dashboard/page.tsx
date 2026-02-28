@@ -367,7 +367,7 @@ export default function DashboardPage() {
 
             {/* QR codes grid */}
             {filtered.length > 0 && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
                     {filtered.map((qr) => (
                         <QRCodeCard
                             key={qr._id as string}
@@ -417,8 +417,8 @@ function QRCodeCard({
                     position: "absolute",
                     top: "0.75rem",
                     right: "0.75rem",
-                    width: "20px",
-                    height: "20px",
+                    width: "28px",
+                    height: "28px",
                     borderRadius: "4px",
                     border: `2px solid ${selected ? "var(--color-accent)" : "var(--color-border)"}`,
                     background: selected ? "var(--color-accent)" : "transparent",
