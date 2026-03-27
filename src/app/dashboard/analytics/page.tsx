@@ -18,6 +18,7 @@ import {
     BrowserIcon,
     DownloadIcon,
     ClockIcon,
+    ChevronRightIcon,
 } from "@/components/ui/icons";
 
 const DAY_OPTIONS = [7, 14, 30, 90] as const;
@@ -308,49 +309,101 @@ export default function GlobalAnalyticsPage() {
                 </div>
             )}
 
-            {/* Per-QR leaderboard — NOW period-filtered (#3) + clickable (#9) */}
+            {/* Per-QR leaderboard — clickable with clear CTA */}
             {topQRCodes.length > 0 && (
                 <div className="card" style={{ padding: "1.5rem", marginTop: "0.5rem" }}>
-                    <h3 style={{ fontWeight: 700, marginBottom: "1.25rem", fontSize: "1rem" }}>
-                        Top QR codes (laatste {days} dagen)
-                    </h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                        <h3 style={{ fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
+                            <QrCodeIcon size={16} style={{ color: "var(--color-accent)" }} />
+                            Jouw QR codes (laatste {days} dagen)
+                        </h3>
+                        <Link
+                            href="/dashboard"
+                            style={{ fontSize: "0.75rem", color: "var(--color-accent)", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.25rem" }}
+                        >
+                            Alle QR codes <ChevronRightIcon size={12} />
+                        </Link>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                         {topQRCodes.map((qr, i) => {
                             const maxScans = Math.max(topQRCodes[0]?.periodScans ?? 1, 1);
                             const pct = Math.round((qr.periodScans / maxScans) * 100);
                             return (
-                                <div key={qr._id as string} style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-text-faint)", minWidth: "1.25rem" }}>
-                                        {i + 1}
-                                    </span>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                                            <Link
-                                                href={`/dashboard/qr/${qr._id}`}
-                                                style={{
-                                                    fontSize: "0.8125rem", fontWeight: 500, color: "var(--color-text)",
-                                                    textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                                }}
-                                            >
-                                                {qr.title}
-                                            </Link>
-                                            <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-accent)", flexShrink: 0, marginLeft: "0.5rem" }}>
-                                                {qr.periodScans}
-                                            </span>
-                                        </div>
-                                        <div style={{ height: "4px", background: "var(--color-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
-                                            <div style={{ height: "100%", width: `${pct}%`, background: "var(--gradient-brand)", borderRadius: "100px", transition: "width 0.5s ease" }} />
+                                <Link
+                                    key={qr._id as string}
+                                    href={`/dashboard/qr/${qr._id}`}
+                                    style={{ textDecoration: "none", color: "inherit" }}
+                                >
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "0.875rem",
+                                        padding: "0.75rem 1rem", borderRadius: "var(--radius-md)",
+                                        background: "var(--color-bg-2)", border: "1px solid transparent",
+                                        transition: "all 0.2s ease", cursor: "pointer",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.borderColor = "var(--color-accent-border)";
+                                        e.currentTarget.style.background = "var(--color-accent-bg)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.borderColor = "transparent";
+                                        e.currentTarget.style.background = "var(--color-bg-2)";
+                                    }}
+                                    >
+                                        {/* Rank badge */}
+                                        <span style={{
+                                            width: "24px", height: "24px", borderRadius: "6px",
+                                            background: i < 3 ? "var(--color-accent-bg)" : "var(--color-surface-2)",
+                                            border: i < 3 ? "1px solid var(--color-accent-border)" : "1px solid transparent",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            fontSize: "0.6875rem", fontWeight: 700,
+                                            color: i < 3 ? "var(--color-accent)" : "var(--color-text-faint)",
+                                            flexShrink: 0,
+                                        }}>
+                                            {i + 1}
+                                        </span>
+
+                                        {/* QR info */}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                                                <span style={{
+                                                    fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text)",
+                                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                                }}>
+                                                    {qr.title}
+                                                </span>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0, marginLeft: "0.75rem" }}>
+                                                    <span style={{
+                                                        fontSize: "0.75rem", fontWeight: 700, color: "var(--color-accent)",
+                                                        padding: "0.125rem 0.5rem", borderRadius: "100px",
+                                                        background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)",
+                                                    }}>
+                                                        {qr.periodScans} scans
+                                                    </span>
+                                                    <ChevronRightIcon size={14} style={{ color: "var(--color-text-faint)" }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ height: "3px", background: "var(--color-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
+                                                <div style={{ height: "100%", width: `${pct}%`, background: "var(--gradient-brand)", borderRadius: "100px", transition: "width 0.5s ease" }} />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })}
                     </div>
+                    {/* Explicit call-to-action */}
+                    <p style={{
+                        fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: "1rem",
+                        textAlign: "center", fontStyle: "italic",
+                    }}>
+                        Klik op een QR code voor gedetailleerde analytics
+                    </p>
                 </div>
             )}
         </div>
     );
 }
+
 
 function SkeletonRow({ count }: { count: number }) {
     return (
