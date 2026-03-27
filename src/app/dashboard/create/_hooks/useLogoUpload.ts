@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/../convex/_generated/api";
+import { Id } from "@/../convex/_generated/dataModel";
 import { isValidUrl } from "@/lib/qr-types";
 import { QRCustomization } from "./useQRCustomization";
 
@@ -35,7 +36,7 @@ export function useLogoUpload(setCustomization: React.Dispatch<React.SetStateAct
         setErrorMsg("");
         try {
             if (logoStorageId) {
-                await deleteStorageFile({ storageId: logoStorageId }).catch(() => { });
+                await deleteStorageFile({ storageId: logoStorageId as Id<"_storage"> }).catch(() => { });
             }
             const uploadUrl = await generateUploadUrl();
             const putRes = await fetch(uploadUrl, {
@@ -45,7 +46,7 @@ export function useLogoUpload(setCustomization: React.Dispatch<React.SetStateAct
             });
             if (!putRes.ok) throw new Error("Upload mislukt.");
             const { storageId } = await putRes.json();
-            const publicUrl = await getStorageUrl({ storageId });
+            const publicUrl = await getStorageUrl({ storageId: storageId as Id<"_storage"> });
             if (!publicUrl) throw new Error("Kon geen publieke URL ophalen.");
             setLogoStorageId(storageId);
             setCustomization((prev) => ({ ...prev, logoUrl: publicUrl, errorCorrectionLevel: "H" }));
@@ -59,7 +60,7 @@ export function useLogoUpload(setCustomization: React.Dispatch<React.SetStateAct
     const handleLogoClear = () => {
         setLogoInput("");
         if (logoStorageId) {
-            deleteStorageFile({ storageId: logoStorageId }).catch(() => { });
+            deleteStorageFile({ storageId: logoStorageId as Id<"_storage"> }).catch(() => { });
             setLogoStorageId(undefined);
         }
         setCustomization((prev) => ({ ...prev, logoUrl: undefined }));

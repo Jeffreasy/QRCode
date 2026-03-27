@@ -30,8 +30,14 @@ export function HeroSection() {
 
             <div className="hero-cta-group">
                 <Link href="/sign-up" className="btn btn-primary btn-lg">Start gratis</Link>
-                <a href="#features" className="btn btn-secondary btn-lg">Bekijk functies</a>
+                <a href="#pricing" className="btn btn-secondary btn-lg">Bekijk prijzen</a>
             </div>
+
+            {/* Trust micro-copy */}
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-text-faint)", marginTop: "1rem" }}>
+                <span style={{ color: "var(--color-success)", fontWeight: 600 }}>✓</span>{" "}
+                Gratis codes blijven altijd actief — geen creditcard vereist
+            </p>
 
             {/* Stats */}
             <div className="stats-grid">

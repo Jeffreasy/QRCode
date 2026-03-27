@@ -10,8 +10,11 @@
 
 import type * as analytics from "../analytics.js";
 import type * as http from "../http.js";
+import type * as lib_planLimits from "../lib/planLimits.js";
+import type * as plans from "../plans.js";
 import type * as qrCodes from "../qrCodes.js";
 import type * as storage from "../storage.js";
+import type * as subscriptions from "../subscriptions.js";
 
 import type {
   ApiFromModules,
@@ -22,8 +25,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   http: typeof http;
+  "lib/planLimits": typeof lib_planLimits;
+  plans: typeof plans;
   qrCodes: typeof qrCodes;
   storage: typeof storage;
+  subscriptions: typeof subscriptions;
 }>;
 
 /**

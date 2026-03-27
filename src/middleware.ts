@@ -6,7 +6,6 @@ const isPublicRoute = createRouteMatcher([
     "/sign-in(.*)",
     "/sign-up(.*)",
     "/r/(.*)",        // QR redirect routes — handled by /app/r/[slug]/route.ts
-    "/api/scan(.*)",  // Scan logging endpoint
     "/not-found",
 ]);
 

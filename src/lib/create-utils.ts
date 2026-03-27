@@ -33,6 +33,8 @@ export function isStepOneComplete(type: QRType | null, formData: Record<string, 
         case "text": return !!(formData.text?.trim());
         case "file": return isValidUrl(formData.fileUrl ?? "");
         case "social": return isValidUrl(formData.pageUrl ?? "");
+        case "whatsapp": return !!(formData.phone?.trim());
+        case "event": return !!(formData.title?.trim() && formData.startDate?.trim());
         default: return true;
     }
 }
@@ -49,6 +51,8 @@ export function getPayload(type: QRType, formData: Record<string, string>): QRPa
         case "sms": return { phone: formData.phone || "", message: formData.message };
         case "file": return { fileUrl: formData.fileUrl || "" };
         case "social": return { pageUrl: formData.pageUrl || "" };
+        case "whatsapp": return { phone: formData.phone || "", message: formData.message };
+        case "event": return { title: formData.title || "", location: formData.location, startDate: formData.startDate || "", endDate: formData.endDate, description: formData.description };
         default: return { url: "" };
     }
 }

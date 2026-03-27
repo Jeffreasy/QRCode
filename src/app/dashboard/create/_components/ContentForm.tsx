@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { QRType, isValidUrl } from "@/lib/qr-types";
 import { CheckIcon } from "@/components/ui/icons";
 
@@ -18,6 +19,8 @@ export function ContentForm({
 }) {
     const set = (key: string, value: string) => setFormData({ ...formData, [key]: value });
     const toggle = (key: string) => setFormData({ ...formData, [key]: formData[key] === "true" ? "false" : "true" });
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const touch = (key: string) => setTouched((prev) => ({ ...prev, [key]: true }));
 
     return (
         <div>
@@ -224,6 +227,116 @@ export function ContentForm({
                             Je kunt deze URL later altijd wijzigen.
                         </p>
                     )}
+                </div>
+            )}
+
+            {/* WhatsApp */}
+            {type === "whatsapp" && (
+                <div>
+                    <div style={{ marginBottom: "1rem" }}>
+                        <label htmlFor="wa-phone" className="input-label">WhatsApp nummer *</label>
+                        <input
+                            id="wa-phone"
+                            className="input"
+                            placeholder="+31612345678"
+                            value={formData.phone ?? ""}
+                            onChange={(e) => set("phone", e.target.value)}
+                            onBlur={() => touch("phone")}
+                        />
+                        {touched.phone && !formData.phone?.trim() && (
+                            <p style={{ fontSize: "0.75rem", color: "var(--color-error, #ef4444)", marginTop: "0.375rem" }}>
+                                Telefoonnummer is verplicht (inclusief landcode, bijv. +31).
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label htmlFor="wa-message" className="input-label">Vooringevuld bericht</label>
+                        <textarea
+                            id="wa-message"
+                            className="input"
+                            rows={3}
+                            placeholder="Bijv. 'Hallo, ik heb een vraag over...'"
+                            value={formData.message ?? ""}
+                            onChange={(e) => set("message", e.target.value)}
+                            style={{ resize: "vertical" }}
+                        />
+                        <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.375rem" }}>
+                            Optioneel — het bericht wordt vooringevuld in WhatsApp.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Event / Calendar */}
+            {type === "event" && (
+                <div>
+                    <div style={{ marginBottom: "1rem" }}>
+                        <label htmlFor="ev-title" className="input-label">Naam evenement *</label>
+                        <input
+                            id="ev-title"
+                            className="input"
+                            placeholder="Bijv. 'Team Meeting Q1'"
+                            value={formData.title ?? ""}
+                            onChange={(e) => set("title", e.target.value)}
+                            onBlur={() => touch("title")}
+                        />
+                        {touched.title && !formData.title?.trim() && (
+                            <p style={{ fontSize: "0.75rem", color: "var(--color-error, #ef4444)", marginTop: "0.375rem" }}>
+                                Naam is verplicht.
+                            </p>
+                        )}
+                    </div>
+                    {/* Responsive date grid: stacks on mobile (<480px) */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0 1rem" }}>
+                        <div style={{ marginBottom: "1rem" }}>
+                            <label htmlFor="ev-start" className="input-label">Begindatum &amp; -tijd *</label>
+                            <input
+                                id="ev-start"
+                                className="input"
+                                type="datetime-local"
+                                value={formData.startDate ?? ""}
+                                onChange={(e) => set("startDate", e.target.value)}
+                                onBlur={() => touch("startDate")}
+                            />
+                            {touched.startDate && !formData.startDate?.trim() && (
+                                <p style={{ fontSize: "0.75rem", color: "var(--color-error, #ef4444)", marginTop: "0.25rem" }}>
+                                    Begindatum is verplicht.
+                                </p>
+                            )}
+                        </div>
+                        <div style={{ marginBottom: "1rem" }}>
+                            <label htmlFor="ev-end" className="input-label">Einddatum &amp; -tijd</label>
+                            <input
+                                id="ev-end"
+                                className="input"
+                                type="datetime-local"
+                                value={formData.endDate ?? ""}
+                                onChange={(e) => set("endDate", e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div style={{ marginBottom: "1rem" }}>
+                        <label htmlFor="ev-location" className="input-label">Locatie</label>
+                        <input
+                            id="ev-location"
+                            className="input"
+                            placeholder="Bijv. 'Amsterdam, Zuidas' of online link"
+                            value={formData.location ?? ""}
+                            onChange={(e) => set("location", e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="ev-description" className="input-label">Omschrijving</label>
+                        <textarea
+                            id="ev-description"
+                            className="input"
+                            rows={3}
+                            placeholder="Korte omschrijving van het evenement..."
+                            value={formData.description ?? ""}
+                            onChange={(e) => set("description", e.target.value)}
+                            style={{ resize: "vertical" }}
+                        />
+                    </div>
                 </div>
             )}
         </div>

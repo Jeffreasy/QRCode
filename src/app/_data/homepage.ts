@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/icons";
 
 export const STATS = [
-    { value: "8", label: "QR types", Icon: PackageIcon },
+    { value: "10", label: "QR types", Icon: PackageIcon },
     { value: "<50ms", label: "Redirect tijd", Icon: ZapIcon },
     { value: "∞", label: "Wijzigingen", Icon: RefreshIcon },
 ] as const;
@@ -32,8 +32,8 @@ export const FEATURES = [
     },
     {
         Icon: PackageIcon,
-        title: "8 QR types",
-        desc: "URL, vCard, WiFi, Email, SMS, Tekst, PDF en Social — alles in één platform.",
+        title: "10 QR types",
+        desc: "URL, vCard, WiFi, Email, SMS, Tekst, PDF, Social, WhatsApp en Event — alles in één platform.",
     },
     {
         Icon: ZapIcon,

@@ -8,6 +8,8 @@ import {
     ShareIcon,
     FileIcon,
     UsersIcon,
+    WhatsAppIcon,
+    CalendarIcon,
 } from "@/components/ui/icons";
 
 export const STEPS = ["Type", "Inhoud", "Design", "Bevestigen"];
@@ -21,6 +23,8 @@ export const QR_TYPE_ICONS: Record<string, React.FC<{ size?: number }>> = {
     text: TypeIcon,
     social: ShareIcon,
     file: FileIcon,
+    whatsapp: WhatsAppIcon,
+    event: CalendarIcon,
 };
 
 export const DOT_STYLES = [

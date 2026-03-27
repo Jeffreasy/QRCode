@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
@@ -22,7 +22,6 @@ import { RecentScansFeed } from "./_components/RecentScansFeed";
 
 export default function QRDetailPage() {
     const params = useParams();
-    const router = useRouter();
     const qrId = params.id as Id<"qr_codes">;
 
     // ── Queries ──────────────────────────────────────────────────────────────
@@ -35,8 +34,6 @@ export default function QRDetailPage() {
     const design = useDesignDraft(qrId);
     const actions = useQRDetailActions(qrId, recentScans, qrCode ?? null);
 
-    // Suppress unused router warning
-    void router;
 
     // ── Loading / not found states ────────────────────────────────────────────
     if (qrCode === undefined) {
@@ -65,7 +62,7 @@ export default function QRDetailPage() {
     // ── Derived values ────────────────────────────────────────────────────────
     const typeMeta = QR_TYPE_META[qrCode.type as keyof typeof QR_TYPE_META];
     const clientOrigin = typeof window !== "undefined" ? window.location.origin : "";
-    const siteUrl = clientOrigin || process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.jeffdash.com";
+    const siteUrl = clientOrigin || process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://qrcodemaster.app";
     const redirectUrl = `${siteUrl}/r/${qrCode.slug}`;
 
     const activeCustom = design.editingDesign && design.designDraft ? design.designDraft : {

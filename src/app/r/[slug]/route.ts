@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { UAParser } from "ua-parser-js";
 
 /** Categorize a Referer header into a human-readable source label */
@@ -16,6 +16,16 @@ function categorizeReferrer(referer: string | null): string {
     if (r.includes("duckduckgo.com")) return "DuckDuckGo";
     if (r.includes("whatsapp")) return "WhatsApp";
     return "Other";
+}
+
+/** Convert ISO 3166-1 alpha-2 country code to full name via Intl API (zero dependencies). */
+function isoToCountryName(code: string): string {
+    try {
+        const name = new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase());
+        return name ?? code;
+    } catch {
+        return code; // Return raw ISO code as fallback
+    }
 }
 
 export async function GET(
@@ -61,51 +71,73 @@ export async function GET(
                 ? destination
                 : `https://${destination}`;
 
-        // Parse User-Agent
-        const ua = req.headers.get("user-agent") ?? "";
-        const ip =
-            req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-            req.headers.get("x-real-ip") ??
-            "unknown";
+        // Respond immediately
+        const response = NextResponse.redirect(redirectUrl, { status: 302 });
 
-        const parser = new UAParser(ua);
-        const device = parser.getDevice();
-        const browser = parser.getBrowser();
-        const os = parser.getOS();
-        const deviceType =
-            device.type === "mobile" ? "mobile" : device.type === "tablet" ? "tablet" : "desktop";
+        // Use Next.js after() — guaranteed to run after response is sent,
+        // even in serverless/edge environments (Vercel, Cloudflare Workers)
+        after(async () => {
+            const ua = req.headers.get("user-agent") ?? "";
+            const ip =
+                req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+                req.headers.get("x-real-ip") ??
+                "unknown";
 
-        // Categorize referrer source
-        const referrer = categorizeReferrer(req.headers.get("referer"));
+            const parser = new UAParser(ua);
+            const device = parser.getDevice();
+            const browser = parser.getBrowser();
+            const os = parser.getOS();
+            const deviceType =
+                device.type === "mobile" ? "mobile" : device.type === "tablet" ? "tablet" : "desktop";
 
-        // Geo lookup: country + region (province/state) + city — best-effort, 2s timeout
-        let country: string | null = null;
-        let region: string | null = null;
-        let city: string | null = null;
-        try {
-            if (ip && ip !== "unknown" && ip !== "::1" && ip !== "127.0.0.1") {
-                const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
-                    signal: AbortSignal.timeout(2000),
-                });
-                if (geoRes.ok) {
-                    const geo = await geoRes.json();
-                    country = geo.country_name ?? null;
-                    region = geo.region ?? null;      // province / state
-                    city = geo.city ?? null;
+            const referrer = categorizeReferrer(req.headers.get("referer"));
+
+            let country: string | null = null;
+            let region: string | null = null;
+            let city: string | null = null;
+
+            // ── Strategy 1: Vercel geo headers (free, unlimited, 0ms) ────────
+            const vercelCountry = req.headers.get("x-vercel-ip-country");
+            const vercelRegion = req.headers.get("x-vercel-ip-country-region");
+            const vercelCity = req.headers.get("x-vercel-ip-city");
+
+            if (vercelCountry && vercelCountry !== "XX") {
+                country = isoToCountryName(vercelCountry);
+                region = vercelRegion ? decodeURIComponent(vercelRegion) : null;
+                city = vercelCity ? decodeURIComponent(vercelCity) : null;
+            }
+
+            // ── Strategy 2: ipapi.co fallback (non-Vercel environments) ──────
+            if (!country) {
+                try {
+                    if (ip && ip !== "unknown" && ip !== "::1" && ip !== "127.0.0.1") {
+                        const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
+                            signal: AbortSignal.timeout(2000),
+                        });
+                        if (geoRes.ok) {
+                            const geo = await geoRes.json();
+                            if (!geo.error) {
+                                country = geo.country_name ?? null;
+                                region = geo.region ?? null;
+                                city = geo.city ?? null;
+                            }
+                        }
+                    }
+                } catch {
+                    // Geo is best-effort — never block the redirect
                 }
             }
-        } catch {
-            // Geo is best-effort — never block the redirect
-        }
 
-        // Fire-and-forget scan log
-        fetch(`${convexUrl}/api/mutation`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                path: "analytics:logScan",
-                format: "json",
-                args: {
+            // Log scan via secured Convex HTTP action (Bearer token auth)
+            const scanLogSecret = process.env.SCAN_LOG_SECRET;
+            const convexSiteUrl = convexUrl.replace(/\.cloud$/, ".site");
+            fetch(`${convexSiteUrl}/logScan`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(scanLogSecret ? { Authorization: `Bearer ${scanLogSecret}` } : {}),
+                },
+                body: JSON.stringify({
                     qrCodeId: qrCode._id,
                     userId: qrCode.userId,
                     device: deviceType,
@@ -115,13 +147,14 @@ export async function GET(
                     ...(region ? { region } : {}),
                     ...(city ? { city } : {}),
                     referrer,
-                },
-            }),
-        }).catch((err) => console.error("[QR Redirect] Scan log failed:", err));
+                }),
+            }).catch((err) => console.error("[QR Redirect] Scan log failed:", err));
+        });
 
-        return NextResponse.redirect(redirectUrl, { status: 302 });
+        return response;
     } catch (err) {
         console.error(`[QR Redirect] Error for slug "${slug}":`, err);
         return NextResponse.redirect(new URL("/not-found", req.url));
     }
 }
+

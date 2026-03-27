@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { customAlphabet } from "nanoid";
+import { assertFeature } from "./lib/planLimits";
 
 const generateSlug = customAlphabet(
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
@@ -27,7 +28,9 @@ export const createQRCode = mutation({
             v.literal("email"),
             v.literal("sms"),
             v.literal("file"),
-            v.literal("social")
+            v.literal("social"),
+            v.literal("whatsapp"),
+            v.literal("event")
         ),
         destination: v.string(),
         title: v.string(),
@@ -76,6 +79,16 @@ export const createQRCode = mutation({
         const userId = identity.subject;
 
         validateUrl(args.destination, args.type);
+
+        // Feature gate: WhatsApp and Event require Pro or higher
+        if (args.type === "whatsapp" || args.type === "event") {
+            await assertFeature(ctx, userId, "whatsappEvent");
+        }
+
+        // Feature gate: File and Social require Pro or higher
+        if (args.type === "file" || args.type === "social") {
+            await assertFeature(ctx, userId, "advancedQrTypes");
+        }
 
         // Generate a unique slug
         let slug = generateSlug();
@@ -245,12 +258,20 @@ export const deleteQRCode = mutation({
         if (!qrCode || qrCode.userId !== userId) {
             throw new Error("QR code not found or access denied");
         }
-        // Delete all scan events for this QR code
-        const events = await ctx.db
-            .query("scan_events")
-            .withIndex("by_qr_code", (q) => q.eq("qrCodeId", args.id))
-            .collect();
-        await Promise.all(events.map((e) => ctx.db.delete(e._id)));
+        // Delete scan events in batches to prevent OOM on popular QR codes.
+        // Convex mutations have a 10k document limit, so we batch at 256.
+        let hasMore = true;
+        while (hasMore) {
+            const batch = await ctx.db
+                .query("scan_events")
+                .withIndex("by_qr_code", (q) => q.eq("qrCodeId", args.id))
+                .take(256);
+            if (batch.length === 0) {
+                hasMore = false;
+            } else {
+                await Promise.all(batch.map((e) => ctx.db.delete(e._id)));
+            }
+        }
         await ctx.db.delete(args.id);
     },
 });
@@ -331,13 +352,22 @@ export const getById = query({
     },
 });
 
-// Public lookup by slug (used by redirect middleware)
+// Public lookup by slug (used by redirect route).
+// Returns ONLY the fields needed for redirect — no userId, customization, etc.
 export const getBySlug = query({
     args: { slug: v.string() },
     handler: async (ctx, args) => {
-        return await ctx.db
+        const qr = await ctx.db
             .query("qr_codes")
             .withIndex("by_slug", (q) => q.eq("slug", args.slug))
             .first();
+        if (!qr) return null;
+        return {
+            _id: qr._id,
+            destination: qr.destination,
+            isActive: qr.isActive,
+            userId: qr.userId,
+            type: qr.type,
+        };
     },
 });

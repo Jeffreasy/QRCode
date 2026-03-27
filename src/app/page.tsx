@@ -1,6 +1,9 @@
 import { HomeNav } from "./_components/HomeNav";
 import { HeroSection } from "./_components/HeroSection";
 import { FeaturesSection } from "./_components/FeaturesSection";
+import { TrustSection } from "./_components/TrustSection";
+import { PricingSection } from "./_components/PricingSection";
+import { FaqSection } from "./_components/FaqSection";
 import { HomeFooter } from "./_components/HomeFooter";
 
 export default function HomePage() {
@@ -15,6 +18,9 @@ export default function HomePage() {
       <HomeNav />
       <HeroSection />
       <FeaturesSection />
+      <TrustSection />
+      <PricingSection />
+      <FaqSection />
       <HomeFooter />
     </main>
   );

@@ -10,6 +10,9 @@ export function HomeFooter() {
                     <span>© {new Date().getFullYear()} QRCodeMaster</span>
                 </div>
                 <div style={{ display: "flex", gap: "1.25rem" }}>
+                    <a href="#pricing" style={{ color: "inherit", textDecoration: "none" }} className="footer-link">
+                        Prijzen
+                    </a>
                     <Link href="/sign-up" style={{ color: "inherit", textDecoration: "none" }} className="footer-link">
                         Gratis starten
                     </Link>

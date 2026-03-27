@@ -48,6 +48,32 @@
   /* Transitions */
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Semantic tokens */
+  --color-accent-bg: rgba(56, 189, 248, 0.1);
+  --color-accent-border: rgba(56, 189, 248, 0.2);
+  --color-accent-border-active: rgba(56, 189, 248, 0.4);
+  --color-success-bg: rgba(52, 211, 153, 0.1);
+  --color-success-border: rgba(52, 211, 153, 0.2);
+  --color-danger-bg: rgba(248, 113, 113, 0.1);
+  --color-danger-border: rgba(248, 113, 113, 0.2);
+  --color-muted-bg: rgba(148, 163, 184, 0.1);
+  --color-muted-border: rgba(148, 163, 184, 0.1);
+
+  /* Warning tokens */
+  --color-warning-bg: rgba(251, 191, 36, 0.1);
+  --color-warning-border: rgba(251, 191, 36, 0.25);
+
+  /* Error tokens */
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.1);
+  --color-error-border: rgba(248, 113, 113, 0.2);
+
+  /* Skeleton shimmer tokens */
+  --skeleton-from: var(--color-surface);
+  --skeleton-to: var(--color-surface-2);
+
+  --sidebar-width: 240px;
 }
 
 /* ============================================
@@ -76,6 +102,17 @@ body {
 ::selection {
   background: rgba(56, 189, 248, 0.3);
   color: white;
+}
+
+/* Accessible focus ring for all focusable elements */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Inputs use box-shadow focus instead of outline (see .input:focus below) */
+.input:focus-visible {
+  outline: none;
 }
 
 /* ============================================
@@ -431,37 +468,6 @@ body {
 
 
 /* ============================================
-   EXTRA DESIGN TOKENS (semantic)
-   ============================================ */
-:root {
-  --color-accent-bg: rgba(56, 189, 248, 0.1);
-  --color-accent-border: rgba(56, 189, 248, 0.2);
-  --color-accent-border-active: rgba(56, 189, 248, 0.4);
-  --color-success-bg: rgba(52, 211, 153, 0.1);
-  --color-success-border: rgba(52, 211, 153, 0.2);
-  --color-danger-bg: rgba(248, 113, 113, 0.1);
-  --color-danger-border: rgba(248, 113, 113, 0.2);
-  --color-muted-bg: rgba(148, 163, 184, 0.1);
-  --color-muted-border: rgba(148, 163, 184, 0.1);
-
-  /* Warning tokens — dark theme */
-  --color-warning: #fbbf24;
-  --color-warning-bg: rgba(251, 191, 36, 0.1);
-  --color-warning-border: rgba(251, 191, 36, 0.25);
-
-  /* Error tokens — dark theme */
-  --color-error: #f87171;
-  --color-error-bg: rgba(248, 113, 113, 0.1);
-  --color-error-border: rgba(248, 113, 113, 0.2);
-
-  /* Skeleton shimmer tokens */
-  --skeleton-from: var(--color-surface);
-  --skeleton-to: var(--color-surface-2);
-
-  --sidebar-width: 240px;
-}
-
-/* ============================================
    RESPONSIVE UTILITIES
    ============================================ */
 .sidebar-overlay {
@@ -544,7 +550,128 @@ body {
 
 /* Features section */
 .features-section {
-  padding: 3rem 1.5rem 6rem;
+  padding: 3rem 1.5rem 4rem;
+}
+
+/* Trust section */
+.trust-section {
+  padding: 4rem 1.5rem;
+}
+
+.trust-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.trust-point-card {
+  cursor: default;
+}
+
+/* Pricing section */
+.pricing-section {
+  padding: 4rem 1.5rem 2rem;
+}
+
+.pricing-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.pricing-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 2rem 1.5rem;
+  transition: var(--transition);
+}
+
+.pricing-card:hover {
+  border-color: rgba(56, 189, 248, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+/* Featured pricing card — Pro tier */
+.pricing-card-featured {
+  background: var(--color-surface-2);
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: var(--shadow-card), 0 0 40px rgba(251, 191, 36, 0.08);
+  padding: 2.25rem 1.5rem;
+}
+
+.pricing-card-featured:hover {
+  border-color: rgba(251, 191, 36, 0.55);
+  box-shadow: var(--shadow-card), 0 0 56px rgba(251, 191, 36, 0.14);
+}
+
+/* FAQ section */
+.faq-section {
+  padding: 4rem 1.5rem 5rem;
+}
+
+.faq-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.faq-item[open] {
+  border-color: var(--color-border-active);
+}
+
+.faq-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  list-style: none;
+  gap: 1rem;
+  user-select: none;
+  min-height: 44px;
+}
+
+.faq-summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-summary:hover {
+  color: var(--color-accent);
+}
+
+.faq-chevron {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  margin-top: -4px;
+  opacity: 0.6;
+}
+
+.faq-item[open] .faq-chevron {
+  transform: rotate(-135deg);
+  margin-top: 4px;
+}
+
+.faq-answer {
+  padding: 0 1.25rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
 }
 
 /* Stats grid — responsive: 3-col on tablet+, 1-col on mobile */
@@ -596,6 +723,27 @@ body {
     margin-right: auto;
     margin-top: 3rem;
   }
+
+  /* Trust: stack into single column */
+  .trust-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  /* Pricing: 2 columns on tablet (Starter + Business stacked, Pro center) */
+  .pricing-cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .trust-section,
+  .pricing-section,
+  .faq-section {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
 }
 
 /* ============================================
@@ -608,6 +756,34 @@ body {
 
   .features-section {
     padding: 2rem 1rem 3rem;
+  }
+
+  .trust-section,
+  .pricing-section,
+  .faq-section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Tighten vertical padding on mobile */
+  .trust-section {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .pricing-section {
+    padding-top: 2.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .faq-section {
+    padding-top: 2.5rem;
+    padding-bottom: 3rem;
+  }
+
+  /* Give pricing cards a bit more breathing room on mid-size mobile */
+  .pricing-cards-grid {
+    max-width: min(100%, 500px);
   }
 
   .hero-cta-group {

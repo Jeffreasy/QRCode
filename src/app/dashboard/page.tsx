@@ -16,7 +16,7 @@ import {
     BanIcon,
 } from "@/components/ui/icons";
 
-const QR_TYPES = ["url", "vcard", "wifi", "text", "email", "sms", "file", "social"] as const;
+const QR_TYPES = ["url", "vcard", "wifi", "text", "email", "sms", "file", "social", "whatsapp", "event"] as const;
 
 type SortKey = "date" | "scans" | "title" | "type";
 
@@ -153,7 +153,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div id="main-content" className="dashboard-main" style={{ padding: "clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)" }}>
+        <div className="dashboard-main" style={{ padding: "clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)" }}>
 
             {/* Header */}
             <div style={{ marginBottom: "2rem" }}>

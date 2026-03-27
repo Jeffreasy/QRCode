@@ -39,7 +39,7 @@ export default function CreateQRPage() {
 
     // Resolve origin client-side only (avoids SSR/CSR hydration mismatch)
     const [siteUrl, setSiteUrl] = useState(
-        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.jeffdash.com"
+        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://qrcodemaster.app"
     );
     useEffect(() => { setSiteUrl(window.location.origin); }, []);
 

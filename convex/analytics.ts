@@ -1,8 +1,21 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 
-// Log a scan event (called from the redirect API route)
-export const logScan = mutation({
+/** Normalize country names to fix ipapi.co inconsistencies (e.g., "The Netherlands" → "Netherlands"). */
+function normalizeCountry(raw: string | undefined): string {
+    if (!raw) return "Unknown";
+    const ALIASES: Record<string, string> = {
+        "The Netherlands": "Netherlands",
+        "Russian Federation": "Russia",
+        "Korea, Republic of": "South Korea",
+        "United States of America": "United States",
+    };
+    return ALIASES[raw] ?? raw;
+}
+
+// Log a scan event — internal only, called via Convex action from the redirect route.
+// Not exposed on the public HTTP API to prevent scan data injection.
+export const logScan = internalMutation({
     args: {
         qrCodeId: v.id("qr_codes"),
         userId: v.string(),
@@ -46,10 +59,12 @@ export const getScanStats = query({
         const qrCode = await ctx.db.get(args.qrCodeId);
         if (!qrCode || qrCode.userId !== identity.subject) return null;
 
+        // Guard: cap at 10k events to prevent OOM on very popular QR codes.
+        // For heavy QR codes, aggregate tables should be used instead.
         const events = await ctx.db
             .query("scan_events")
             .withIndex("by_qr_code", (q) => q.eq("qrCodeId", args.qrCodeId))
-            .collect();
+            .take(10_000);
 
         const deviceCounts: Record<string, number> = {};
         const browserCounts: Record<string, number> = {};
@@ -62,7 +77,7 @@ export const getScanStats = query({
         for (const e of events) {
             const dev = e.device ?? "Unknown";
             const br = e.browser ?? "Unknown";
-            const co = e.country ?? "Unknown";
+            const co = normalizeCountry(e.country);
             const ci = e.city ?? "Unknown";
             const re = e.region ?? "Unknown";
             const os = e.os ?? "Unknown";
@@ -188,10 +203,12 @@ export const getGlobalScanStats = query({
         const days = args.days ?? 30;
         const since = Date.now() - days * 24 * 60 * 60 * 1000;
 
+        // Use compound index by_user_time for efficient time-range filtering
         const events = await ctx.db
             .query("scan_events")
-            .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-            .filter((q) => q.gte(q.field("scannedAt"), since))
+            .withIndex("by_user_time", (q) =>
+                q.eq("userId", identity.subject).gte("scannedAt", since)
+            )
             .collect();
 
         const deviceCounts: Record<string, number> = {};
@@ -212,7 +229,7 @@ export const getGlobalScanStats = query({
         for (const e of events) {
             const dev = e.device ?? "Unknown";
             const br = e.browser ?? "Unknown";
-            const co = e.country ?? "Unknown";
+            const co = normalizeCountry(e.country);
             const ci = e.city ?? "Unknown";
             const re = e.region ?? "Unknown";
             const os = e.os ?? "Unknown";

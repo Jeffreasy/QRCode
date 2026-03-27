@@ -11,7 +11,9 @@ export type QRType =
     | "email"
     | "sms"
     | "file"
-    | "social";
+    | "social"
+    | "whatsapp"
+    | "event";
 
 // --- URL ---
 export interface URLPayload {
@@ -65,6 +67,21 @@ export interface SocialPayload {
     pageUrl: string; // URL to the social aggregator page
 }
 
+// --- WhatsApp ---
+export interface WhatsAppPayload {
+    phone: string;
+    message?: string;
+}
+
+// --- Event / Calendar (vCalendar 2.0) ---
+export interface EventPayload {
+    title: string;
+    location?: string;
+    startDate: string; // ISO datetime string e.g. "2026-03-01T10:00"
+    endDate?: string;
+    description?: string;
+}
+
 export type QRPayload =
     | URLPayload
     | VCardPayload
@@ -73,7 +90,9 @@ export type QRPayload =
     | EmailPayload
     | SMSPayload
     | FilePayload
-    | SocialPayload;
+    | SocialPayload
+    | WhatsAppPayload
+    | EventPayload;
 
 /**
  * Validates that a URL is non-empty and starts with http:// or https://.
@@ -142,6 +161,34 @@ export function encodePayload(type: QRType, payload: QRPayload): string {
         case "social":
             return (payload as SocialPayload).pageUrl;
 
+        case "whatsapp": {
+            const w = payload as WhatsAppPayload;
+            const phone = w.phone.replace(/\D/g, ""); // strip non-digits
+            const base = `https://wa.me/${phone}`;
+            return w.message ? `${base}?text=${encodeURIComponent(w.message)}` : base;
+        }
+
+        case "event": {
+            const e = payload as EventPayload;
+            // RFC 5545: escape backslash, semicolon, comma, and newlines in text fields
+            const vcalEscape = (s: string) =>
+                s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+            const fmt = (iso: string) => iso.replace(/[-:]/g, "").replace("T", "T").slice(0, 15);
+            const lines = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//QRCodeMaster//EN",
+                "BEGIN:VEVENT",
+                `SUMMARY:${vcalEscape(e.title)}`,
+                `DTSTART:${fmt(e.startDate)}`,
+                e.endDate ? `DTEND:${fmt(e.endDate)}` : `DTEND:${fmt(e.startDate)}`,
+            ];
+            if (e.location) lines.push(`LOCATION:${vcalEscape(e.location)}`);
+            if (e.description) lines.push(`DESCRIPTION:${vcalEscape(e.description)}`);
+            lines.push("END:VEVENT", "END:VCALENDAR");
+            return lines.join("\r\n");
+        }
+
         default:
             throw new Error(`Unknown QR type: ${type}`);
     }
@@ -201,5 +248,17 @@ export const QR_TYPE_META: Record<
         icon: "📲",
         description: "Link naar een social media profiel of pagina",
         isDynamic: true,
+    },
+    whatsapp: {
+        label: "WhatsApp",
+        icon: "💬",
+        description: "Open WhatsApp met vooringevuld nummer en bericht",
+        isDynamic: false,
+    },
+    event: {
+        label: "Evenement",
+        icon: "📅",
+        description: "Voeg een afspraak toe aan de kalender",
+        isDynamic: false,
     },
 };
