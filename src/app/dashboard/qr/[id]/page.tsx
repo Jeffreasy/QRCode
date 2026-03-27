@@ -164,7 +164,7 @@ export default function QRDetailPage() {
             </nav>
 
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
+            <div className="qr-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.375rem", flexWrap: "wrap" }}>
                         {typeMeta?.icon && <span style={{ fontSize: "1.5rem" }}>{typeMeta.icon}</span>}
@@ -220,7 +220,7 @@ export default function QRDetailPage() {
                 </div>
 
                 {/* Action buttons */}
-                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <div className="qr-detail-actions" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                     <button className="btn btn-secondary btn-sm" onClick={actions.handleDuplicate} disabled={actions.isDuplicating}
                         style={{ display: "flex", alignItems: "center", gap: "0.375rem" }} title="Dupliceer deze QR code">
                         <CopyIcon size={14} />
@@ -302,7 +302,7 @@ export default function QRDetailPage() {
                     </div>
 
                     {/* KPI Stats with trend */}
-                    <div className="dashboard-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+                    <div className="dashboard-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem" }}>
                         {DETAIL_STATS.map(({ label, value, Icon, showTrend }) => (
                             <div key={label} className="card" style={{ padding: "1.25rem", textAlign: "center" }}>
                                 <div style={{ width: "40px", height: "40px", borderRadius: "var(--radius-md)", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 0.75rem", color: "var(--color-accent)" }}>
@@ -405,7 +405,7 @@ export default function QRDetailPage() {
                         </div>
 
                         {/* Premium features */}
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                        <div className="qr-detail-premium-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                             <ScheduleCard qr={qrCode} />
                             <PasswordCard qr={qrCode} />
                         </div>

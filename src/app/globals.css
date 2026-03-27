@@ -1025,9 +1025,59 @@ body {
     grid-template-columns: 1fr !important;
   }
 
-  /* QR detail: right column (preview/download) comes first on mobile */
+  /* QR detail: right column (preview/download) comes AFTER analytics on mobile */
   .qr-detail-right {
-    order: -1;
+    order: 1;
+    position: static !important;
+    top: auto !important;
+  }
+
+  /* QR detail: KPI cards — force 2 columns on tablet/mobile */
+  .qr-detail-grid .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* QR detail: action buttons — horizontal scroll + hide scrollbar */
+  .qr-detail-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 0.5rem !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.25rem;
+  }
+  .qr-detail-actions::-webkit-scrollbar { display: none; }
+  .qr-detail-actions .btn { flex-shrink: 0 !important; white-space: nowrap !important; }
+
+  /* QR detail: header title wrapping */
+  .qr-detail-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* QR detail: premium features grid — stack on mobile */
+  .qr-detail-premium-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* QR detail: breakdown grids — single column on phones */
+@media (max-width: 600px) {
+  .qr-detail-grid .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.625rem !important;
+  }
+  .qr-detail-grid .dashboard-stats-grid .card {
+    padding: 0.875rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .qr-detail-grid .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
   }
 }
 
