@@ -225,6 +225,94 @@ export default function GlobalAnalyticsPage() {
                 ))}
             </div>
 
+            {/* Per-QR leaderboard — primary navigation to individual analytics */}
+            {topQRCodes.length > 0 && (
+                <div className="card" style={{ padding: "1.5rem", marginBottom: "2rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                        <h3 style={{ fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
+                            <QrCodeIcon size={16} style={{ color: "var(--color-accent)" }} />
+                            Jouw QR codes (laatste {days} dagen)
+                        </h3>
+                        <Link
+                            href="/dashboard"
+                            style={{ fontSize: "0.75rem", color: "var(--color-accent)", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.25rem" }}
+                        >
+                            Alle QR codes <ChevronRightIcon size={12} />
+                        </Link>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {topQRCodes.map((qr, i) => {
+                            const maxScans = Math.max(topQRCodes[0]?.periodScans ?? 1, 1);
+                            const pct = Math.round((qr.periodScans / maxScans) * 100);
+                            return (
+                                <Link
+                                    key={qr._id as string}
+                                    href={`/dashboard/qr/${qr._id}`}
+                                    style={{ textDecoration: "none", color: "inherit" }}
+                                >
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "0.875rem",
+                                        padding: "0.75rem 1rem", borderRadius: "var(--radius-md)",
+                                        background: "var(--color-bg-2)", border: "1px solid transparent",
+                                        transition: "all 0.2s ease", cursor: "pointer",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.borderColor = "var(--color-accent-border)";
+                                        e.currentTarget.style.background = "var(--color-accent-bg)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.borderColor = "transparent";
+                                        e.currentTarget.style.background = "var(--color-bg-2)";
+                                    }}
+                                    >
+                                        <span style={{
+                                            width: "24px", height: "24px", borderRadius: "6px",
+                                            background: i < 3 ? "var(--color-accent-bg)" : "var(--color-surface-2)",
+                                            border: i < 3 ? "1px solid var(--color-accent-border)" : "1px solid transparent",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            fontSize: "0.6875rem", fontWeight: 700,
+                                            color: i < 3 ? "var(--color-accent)" : "var(--color-text-faint)",
+                                            flexShrink: 0,
+                                        }}>
+                                            {i + 1}
+                                        </span>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                                                <span style={{
+                                                    fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text)",
+                                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                                }}>
+                                                    {qr.title}
+                                                </span>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0, marginLeft: "0.75rem" }}>
+                                                    <span style={{
+                                                        fontSize: "0.75rem", fontWeight: 700, color: "var(--color-accent)",
+                                                        padding: "0.125rem 0.5rem", borderRadius: "100px",
+                                                        background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)",
+                                                    }}>
+                                                        {qr.periodScans} scans
+                                                    </span>
+                                                    <ChevronRightIcon size={14} style={{ color: "var(--color-text-faint)" }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ height: "3px", background: "var(--color-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
+                                                <div style={{ height: "100%", width: `${pct}%`, background: "var(--gradient-brand)", borderRadius: "100px", transition: "width 0.5s ease" }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                    <p style={{
+                        fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: "1rem",
+                        textAlign: "center", fontStyle: "italic",
+                    }}>
+                        Klik op een QR code voor gedetailleerde analytics
+                    </p>
+                </div>
+            )}
+
             {/* Scan activity chart */}
             {stats ? (
                 <div style={{ marginBottom: "2rem" }}>
@@ -306,98 +394,6 @@ export default function GlobalAnalyticsPage() {
                             </div>
                         ))}
                     </div>
-                </div>
-            )}
-
-            {/* Per-QR leaderboard — clickable with clear CTA */}
-            {topQRCodes.length > 0 && (
-                <div className="card" style={{ padding: "1.5rem", marginTop: "0.5rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
-                        <h3 style={{ fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
-                            <QrCodeIcon size={16} style={{ color: "var(--color-accent)" }} />
-                            Jouw QR codes (laatste {days} dagen)
-                        </h3>
-                        <Link
-                            href="/dashboard"
-                            style={{ fontSize: "0.75rem", color: "var(--color-accent)", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.25rem" }}
-                        >
-                            Alle QR codes <ChevronRightIcon size={12} />
-                        </Link>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        {topQRCodes.map((qr, i) => {
-                            const maxScans = Math.max(topQRCodes[0]?.periodScans ?? 1, 1);
-                            const pct = Math.round((qr.periodScans / maxScans) * 100);
-                            return (
-                                <Link
-                                    key={qr._id as string}
-                                    href={`/dashboard/qr/${qr._id}`}
-                                    style={{ textDecoration: "none", color: "inherit" }}
-                                >
-                                    <div style={{
-                                        display: "flex", alignItems: "center", gap: "0.875rem",
-                                        padding: "0.75rem 1rem", borderRadius: "var(--radius-md)",
-                                        background: "var(--color-bg-2)", border: "1px solid transparent",
-                                        transition: "all 0.2s ease", cursor: "pointer",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.borderColor = "var(--color-accent-border)";
-                                        e.currentTarget.style.background = "var(--color-accent-bg)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.borderColor = "transparent";
-                                        e.currentTarget.style.background = "var(--color-bg-2)";
-                                    }}
-                                    >
-                                        {/* Rank badge */}
-                                        <span style={{
-                                            width: "24px", height: "24px", borderRadius: "6px",
-                                            background: i < 3 ? "var(--color-accent-bg)" : "var(--color-surface-2)",
-                                            border: i < 3 ? "1px solid var(--color-accent-border)" : "1px solid transparent",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: "0.6875rem", fontWeight: 700,
-                                            color: i < 3 ? "var(--color-accent)" : "var(--color-text-faint)",
-                                            flexShrink: 0,
-                                        }}>
-                                            {i + 1}
-                                        </span>
-
-                                        {/* QR info */}
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
-                                                <span style={{
-                                                    fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-text)",
-                                                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                                }}>
-                                                    {qr.title}
-                                                </span>
-                                                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0, marginLeft: "0.75rem" }}>
-                                                    <span style={{
-                                                        fontSize: "0.75rem", fontWeight: 700, color: "var(--color-accent)",
-                                                        padding: "0.125rem 0.5rem", borderRadius: "100px",
-                                                        background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)",
-                                                    }}>
-                                                        {qr.periodScans} scans
-                                                    </span>
-                                                    <ChevronRightIcon size={14} style={{ color: "var(--color-text-faint)" }} />
-                                                </div>
-                                            </div>
-                                            <div style={{ height: "3px", background: "var(--color-surface-2)", borderRadius: "100px", overflow: "hidden" }}>
-                                                <div style={{ height: "100%", width: `${pct}%`, background: "var(--gradient-brand)", borderRadius: "100px", transition: "width 0.5s ease" }} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                    {/* Explicit call-to-action */}
-                    <p style={{
-                        fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: "1rem",
-                        textAlign: "center", fontStyle: "italic",
-                    }}>
-                        Klik op een QR code voor gedetailleerde analytics
-                    </p>
                 </div>
             )}
         </div>
