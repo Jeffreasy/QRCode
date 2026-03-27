@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
 import { QR_TYPE_META, QRType, encodePayload } from "@/lib/qr-types";
 import { getContrastRatio, getPayload, isStepOneComplete } from "@/lib/create-utils";
+import { getQRBaseUrl } from "@/lib/qr-url";
 import QRPreview from "@/components/qr/QRPreview";
 import {
     CheckIcon,
@@ -36,12 +37,6 @@ export default function CreateQRPage() {
     const { isAuthenticated } = useConvexAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
-
-    // Resolve origin client-side only (avoids SSR/CSR hydration mismatch)
-    const [siteUrl, setSiteUrl] = useState(
-        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://qrcodemaster.app"
-    );
-    useEffect(() => { setSiteUrl(window.location.origin); }, []);
 
     const computedDestination =
         selectedType
@@ -219,7 +214,6 @@ export default function CreateQRPage() {
                             selectedType={selectedType}
                             computedDestination={computedDestination}
                             customization={customization}
-                            siteUrl={siteUrl}
                             errorMsg={errorMsg}
                             hasLowContrast={hasLowContrast}
                         />
@@ -273,7 +267,7 @@ export default function CreateQRPage() {
                         <QRPreview
                             value={
                                 selectedType && QR_TYPE_META[selectedType].isDynamic
-                                    ? `${siteUrl}/r/preview`
+                                    ? `${getQRBaseUrl()}/r/preview`
                                     : computedDestination || "https://qrcodemaster.app"
                             }
                             fgColor={customization.fgColor}

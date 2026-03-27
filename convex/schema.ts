@@ -58,6 +58,24 @@ export default defineSchema({
             logoHideDots: v.optional(v.boolean()), // hideBackgroundDots
             errorCorrectionLevel: v.optional(v.string()), // "L" | "M" | "Q" | "H"
         }),
+        // Scheduling — QR only works within this window
+        scheduledStart: v.optional(v.number()),  // Unix ms
+        scheduledEnd: v.optional(v.number()),     // Unix ms
+        // Password protection
+        password: v.optional(v.string()),
+        // Tags / Folders
+        tags: v.optional(v.array(v.string())),
+        // A/B Testing — multiple weighted destinations
+        abDestinations: v.optional(v.array(v.object({
+            url: v.string(),
+            weight: v.number(),    // 0-100
+            label: v.string(),     // "Variant A"
+        }))),
+        // Geo-targeting — country → destination overrides
+        geoRules: v.optional(v.array(v.object({
+            country: v.string(),    // "Netherlands"
+            destination: v.string(),
+        }))),
         totalScans: v.number(),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -77,6 +95,7 @@ export default defineSchema({
         browser: v.optional(v.string()),
         os: v.optional(v.string()),
         referrer: v.optional(v.string()), // "Direct" | "Instagram" | "Google" | etc.
+        abVariant: v.optional(v.string()), // A/B test variant label
     })
         .index("by_qr_code", ["qrCodeId"])
         .index("by_qr_code_time", ["qrCodeId", "scannedAt"])

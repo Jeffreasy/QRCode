@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { QR_TYPE_META } from "@/lib/qr-types";
+import { getQRRedirectUrl, getQRDisplayUrl } from "@/lib/qr-url";
 import QRPreview from "@/components/qr/QRPreview";
 import QRDownload from "@/components/qr/QRDownload";
 import ScanChart from "@/components/analytics/ScanChart";
@@ -13,12 +14,14 @@ import {
     BarChartIcon, SmartphoneIcon, GlobeIcon, LinkIcon,
     TrashIcon, CheckIcon, BanIcon, ZapIcon, ArrowUpRightIcon,
     ChevronRightIcon, EditIcon, XIcon, CopyIcon, BrowserIcon,
+    ShareIcon,
 } from "@/components/ui/icons";
 import { useDesignDraft } from "./_hooks/useDesignDraft";
 import { useQRDetailActions } from "./_hooks/useQRDetailActions";
 import { DesignEditPanel } from "./_components/DesignEditPanel";
 import { BreakdownCard } from "./_components/BreakdownCard";
 import { RecentScansFeed } from "./_components/RecentScansFeed";
+import { ScheduleCard, PasswordCard, TagsCard, ABTestCard, GeoRulesCard } from "./_components/PremiumFeatures";
 
 export default function QRDetailPage() {
     const params = useParams();
@@ -61,9 +64,8 @@ export default function QRDetailPage() {
 
     // ── Derived values ────────────────────────────────────────────────────────
     const typeMeta = QR_TYPE_META[qrCode.type as keyof typeof QR_TYPE_META];
-    const clientOrigin = typeof window !== "undefined" ? window.location.origin : "";
-    const siteUrl = clientOrigin || process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://qrcodemaster.app";
-    const redirectUrl = `${siteUrl}/r/${qrCode.slug}`;
+    const redirectUrl = getQRRedirectUrl(qrCode.slug);
+    const displayUrl = getQRDisplayUrl(qrCode.slug);
 
     const activeCustom = design.editingDesign && design.designDraft ? design.designDraft : {
         fgColor: qrCode.customization?.fgColor ?? "#000000",
@@ -142,7 +144,7 @@ export default function QRDetailPage() {
                             {qrCode.isActive ? "Actief" : "Inactief"}
                         </span>
                     </div>
-                    <p style={{ color: "var(--color-text-faint)", fontFamily: "monospace", fontSize: "0.875rem" }}>/r/{qrCode.slug}</p>
+                    <p style={{ color: "var(--color-text-faint)", fontFamily: "monospace", fontSize: "0.875rem" }}>{displayUrl}</p>
                 </div>
 
                 {/* Action buttons */}
@@ -151,6 +153,18 @@ export default function QRDetailPage() {
                         style={{ display: "flex", alignItems: "center", gap: "0.375rem" }} title="Dupliceer deze QR code">
                         <CopyIcon size={14} />
                         {actions.isDuplicating ? "..." : "Dupliceren"}
+                    </button>
+                    <button className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                            if (navigator.share) {
+                                navigator.share({ title: qrCode.title, text: `Scan de QR code: ${qrCode.title}`, url: redirectUrl }).catch(() => {});
+                            } else {
+                                actions.handleCopyUrl(redirectUrl);
+                            }
+                        }}
+                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }} title="Deel deze QR code">
+                        <ShareIcon size={14} />
+                        Delen
                     </button>
                     <button className="btn btn-secondary btn-sm" onClick={actions.handleToggle}
                         style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
@@ -245,6 +259,15 @@ export default function QRDetailPage() {
                             </p>
                         )}
                     </div>
+
+                    {/* Premium features */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                        <ScheduleCard qr={qrCode} />
+                        <PasswordCard qr={qrCode} />
+                    </div>
+                    <TagsCard qr={qrCode} />
+                    <ABTestCard qr={qrCode} />
+                    <GeoRulesCard qr={qrCode} />
                 </div>
 
                 {/* Right column */}

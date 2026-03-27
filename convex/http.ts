@@ -30,6 +30,7 @@ http.route({
             region: body.region,
             city: body.city,
             referrer: body.referrer,
+            abVariant: body.abVariant,
         });
 
         return new Response(JSON.stringify({ ok: true }), {

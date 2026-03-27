@@ -353,7 +353,7 @@ export const getById = query({
 });
 
 // Public lookup by slug (used by redirect route).
-// Returns ONLY the fields needed for redirect — no userId, customization, etc.
+// Returns fields needed for redirect — including premium features.
 export const getBySlug = query({
     args: { slug: v.string() },
     handler: async (ctx, args) => {
@@ -368,6 +368,140 @@ export const getBySlug = query({
             isActive: qr.isActive,
             userId: qr.userId,
             type: qr.type,
+            scheduledStart: qr.scheduledStart,
+            scheduledEnd: qr.scheduledEnd,
+            password: qr.password ? true : false, // never expose the actual password
+            abDestinations: qr.abDestinations,
+            geoRules: qr.geoRules,
         };
+    },
+});
+
+// ── Premium Feature Mutations ────────────────────────────────────────────────
+
+// Update schedule (start/end window)
+export const updateSchedule = mutation({
+    args: {
+        id: v.id("qr_codes"),
+        scheduledStart: v.optional(v.union(v.number(), v.null())),
+        scheduledEnd: v.optional(v.union(v.number(), v.null())),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const qr = await ctx.db.get(args.id);
+        if (!qr || qr.userId !== identity.subject) throw new Error("Geen toegang.");
+        await ctx.db.patch(args.id, {
+            scheduledStart: args.scheduledStart ?? undefined,
+            scheduledEnd: args.scheduledEnd ?? undefined,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Update password (set or remove)
+export const updatePassword = mutation({
+    args: {
+        id: v.id("qr_codes"),
+        password: v.optional(v.union(v.string(), v.null())),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const qr = await ctx.db.get(args.id);
+        if (!qr || qr.userId !== identity.subject) throw new Error("Geen toegang.");
+        await ctx.db.patch(args.id, {
+            password: args.password ?? undefined,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Verify password (public — used by password interstitial)
+export const verifyPassword = query({
+    args: {
+        slug: v.string(),
+        password: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const qr = await ctx.db
+            .query("qr_codes")
+            .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+            .first();
+        if (!qr || !qr.password) return { valid: false, destination: null };
+        if (qr.password !== args.password) return { valid: false, destination: null };
+        return { valid: true, destination: qr.destination };
+    },
+});
+
+// Update tags
+export const updateTags = mutation({
+    args: {
+        id: v.id("qr_codes"),
+        tags: v.array(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const qr = await ctx.db.get(args.id);
+        if (!qr || qr.userId !== identity.subject) throw new Error("Geen toegang.");
+        await ctx.db.patch(args.id, {
+            tags: args.tags,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Update A/B test destinations
+export const updateABDestinations = mutation({
+    args: {
+        id: v.id("qr_codes"),
+        abDestinations: v.optional(v.union(
+            v.array(v.object({
+                url: v.string(),
+                weight: v.number(),
+                label: v.string(),
+            })),
+            v.null(),
+        )),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const qr = await ctx.db.get(args.id);
+        if (!qr || qr.userId !== identity.subject) throw new Error("Geen toegang.");
+        // Validate total weight = 100 if destinations exist
+        if (args.abDestinations && args.abDestinations.length > 0) {
+            const total = args.abDestinations.reduce((s, d) => s + d.weight, 0);
+            if (total !== 100) throw new Error("Gewichten moeten optellen tot 100%.");
+        }
+        await ctx.db.patch(args.id, {
+            abDestinations: args.abDestinations ?? undefined,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Update geo-targeting rules
+export const updateGeoRules = mutation({
+    args: {
+        id: v.id("qr_codes"),
+        geoRules: v.optional(v.union(
+            v.array(v.object({
+                country: v.string(),
+                destination: v.string(),
+            })),
+            v.null(),
+        )),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Niet ingelogd.");
+        const qr = await ctx.db.get(args.id);
+        if (!qr || qr.userId !== identity.subject) throw new Error("Geen toegang.");
+        await ctx.db.patch(args.id, {
+            geoRules: args.geoRules ?? undefined,
+            updatedAt: Date.now(),
+        });
     },
 });

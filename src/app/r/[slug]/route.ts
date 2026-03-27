@@ -28,6 +28,51 @@ function isoToCountryName(code: string): string {
     }
 }
 
+/** Select a destination from A/B test variants using weighted random. */
+function selectABVariant(destinations: { url: string; weight: number; label: string }[]): { url: string; label: string } {
+    const rand = Math.random() * 100;
+    let cumulative = 0;
+    for (const dest of destinations) {
+        cumulative += dest.weight;
+        if (rand < cumulative) return { url: dest.url, label: dest.label };
+    }
+    // Fallback to last variant
+    const last = destinations[destinations.length - 1];
+    return { url: last.url, label: last.label };
+}
+
+/** Render a minimal branded HTML page for status messages. */
+function renderStatusPage(title: string, message: string): NextResponse {
+    const html = `<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>${title} — JeffDash QR</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;display:flex;align-items:center;justify-content:center;
+            background:#0c0f1a;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif}
+        .container{text-align:center;max-width:400px;padding:2rem}
+        h1{font-size:1.5rem;font-weight:800;margin-bottom:0.75rem;
+            background:linear-gradient(135deg,#38bdf8,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        p{color:#94a3b8;font-size:0.875rem;line-height:1.6}
+        .icon{font-size:3rem;margin-bottom:1rem}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🔒</div>
+        <h1>${title}</h1>
+        <p>${message}</p>
+    </div>
+</body>
+</html>`;
+    return new NextResponse(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+}
+
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ slug: string }> }
@@ -65,7 +110,61 @@ export async function GET(
             return NextResponse.redirect(new URL("/not-found", req.url));
         }
 
-        const destination = qrCode.destination;
+        // ── Schedule check ───────────────────────────────────────────────────
+        const now = Date.now();
+        if (qrCode.scheduledStart && now < qrCode.scheduledStart) {
+            const startDate = new Date(qrCode.scheduledStart).toLocaleDateString("nl-NL", {
+                day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+            });
+            return renderStatusPage(
+                "Nog niet beschikbaar",
+                `Deze QR code wordt actief op ${startDate}.`,
+            );
+        }
+        if (qrCode.scheduledEnd && now > qrCode.scheduledEnd) {
+            return renderStatusPage(
+                "Verlopen",
+                "Deze QR code is niet meer actief. De campagne is beëindigd.",
+            );
+        }
+
+        // ── Password check ───────────────────────────────────────────────────
+        if (qrCode.password) {
+            // Redirect to password interstitial page
+            const passwordUrl = new URL(`/r/${slug}/password`, req.url);
+            return NextResponse.redirect(passwordUrl, { status: 302 });
+        }
+
+        // ── Geo-targeting headers ────────────────────────────────────────────
+        const vercelCountry = req.headers.get("x-vercel-ip-country");
+        let resolvedCountry: string | null = null;
+
+        if (vercelCountry && vercelCountry !== "XX") {
+            resolvedCountry = isoToCountryName(vercelCountry);
+        }
+
+        // ── Determine destination ────────────────────────────────────────────
+        let destination = qrCode.destination;
+        let abVariant: string | undefined;
+
+        // 1. Geo-targeting: country → destination override
+        if (qrCode.geoRules && qrCode.geoRules.length > 0 && resolvedCountry) {
+            const geoMatch = qrCode.geoRules.find(
+                (r: { country: string; destination: string }) =>
+                    r.country.toLowerCase() === resolvedCountry!.toLowerCase()
+            );
+            if (geoMatch) {
+                destination = geoMatch.destination;
+            }
+        }
+
+        // 2. A/B Testing: weighted random selection (only if no geo override matched)
+        if (!abVariant && qrCode.abDestinations && qrCode.abDestinations.length > 0) {
+            const selected = selectABVariant(qrCode.abDestinations);
+            destination = selected.url;
+            abVariant = selected.label;
+        }
+
         const redirectUrl =
             destination.startsWith("http://") || destination.startsWith("https://")
                 ? destination
@@ -74,8 +173,7 @@ export async function GET(
         // Respond immediately
         const response = NextResponse.redirect(redirectUrl, { status: 302 });
 
-        // Use Next.js after() — guaranteed to run after response is sent,
-        // even in serverless/edge environments (Vercel, Cloudflare Workers)
+        // Use Next.js after() — guaranteed to run after response is sent
         after(async () => {
             const ua = req.headers.get("user-agent") ?? "";
             const ip =
@@ -92,22 +190,20 @@ export async function GET(
 
             const referrer = categorizeReferrer(req.headers.get("referer"));
 
-            let country: string | null = null;
+            let country: string | null = resolvedCountry;
             let region: string | null = null;
             let city: string | null = null;
 
-            // ── Strategy 1: Vercel geo headers (free, unlimited, 0ms) ────────
-            const vercelCountry = req.headers.get("x-vercel-ip-country");
             const vercelRegion = req.headers.get("x-vercel-ip-country-region");
             const vercelCity = req.headers.get("x-vercel-ip-city");
 
             if (vercelCountry && vercelCountry !== "XX") {
-                country = isoToCountryName(vercelCountry);
+                if (!country) country = isoToCountryName(vercelCountry);
                 region = vercelRegion ? decodeURIComponent(vercelRegion) : null;
                 city = vercelCity ? decodeURIComponent(vercelCity) : null;
             }
 
-            // ── Strategy 2: ipapi.co fallback (non-Vercel environments) ──────
+            // Strategy 2: ipapi.co fallback (non-Vercel environments)
             if (!country) {
                 try {
                     if (ip && ip !== "unknown" && ip !== "::1" && ip !== "127.0.0.1") {
@@ -147,6 +243,7 @@ export async function GET(
                     ...(region ? { region } : {}),
                     ...(city ? { city } : {}),
                     referrer,
+                    ...(abVariant ? { abVariant } : {}),
                 }),
             }).catch((err) => console.error("[QR Redirect] Scan log failed:", err));
         });
@@ -157,4 +254,3 @@ export async function GET(
         return NextResponse.redirect(new URL("/not-found", req.url));
     }
 }
-

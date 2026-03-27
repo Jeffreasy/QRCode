@@ -26,6 +26,7 @@ export const logScan = internalMutation({
         browser: v.optional(v.string()),
         os: v.optional(v.string()),
         referrer: v.optional(v.string()),
+        abVariant: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         await ctx.db.insert("scan_events", {
@@ -39,6 +40,7 @@ export const logScan = internalMutation({
             browser: args.browser,
             os: args.os,
             referrer: args.referrer,
+            abVariant: args.abVariant,
         });
         // Increment total scan counter on the QR code
         const qrCode = await ctx.db.get(args.qrCodeId);

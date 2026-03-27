@@ -6,7 +6,9 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import QRPreview from "@/components/qr/QRPreview";
+import { getQRRedirectUrl, getQRDisplayUrl } from "@/lib/qr-url";
 import {
     QrCodeIcon,
     BarChartIcon,
@@ -14,6 +16,9 @@ import {
     PlusIcon,
     TrashIcon,
     BanIcon,
+    SearchIcon,
+    CopyIcon,
+    ShareIcon,
 } from "@/components/ui/icons";
 
 const QR_TYPES = ["url", "vcard", "wifi", "text", "email", "sms", "file", "social", "whatsapp", "event"] as const;
@@ -47,6 +52,7 @@ interface QRCode {
         logoHideDots?: boolean;
         errorCorrectionLevel?: string;
     };
+    tags?: string[];
 }
 
 export default function DashboardPage() {
@@ -60,6 +66,7 @@ export default function DashboardPage() {
     const [filterType, setFilterType] = useState<string>("all");
     const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
     const [sortBy, setSortBy] = useState<SortKey>("date");
+    const [filterTag, setFilterTag] = useState<string>("all");
 
     // Bulk select state
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -100,6 +107,11 @@ export default function DashboardPage() {
         if (filterStatus === "active") list = list.filter((qr) => qr.isActive);
         if (filterStatus === "inactive") list = list.filter((qr) => !qr.isActive);
 
+        // Tag filter
+        if (filterTag !== "all") {
+            list = list.filter((qr) => qr.tags?.includes(filterTag));
+        }
+
         // Sort
         list.sort((a, b) => {
             if (sortBy === "date") return b.createdAt - a.createdAt;
@@ -110,7 +122,15 @@ export default function DashboardPage() {
         });
 
         return list;
-    }, [qrCodes, search, filterType, filterStatus, sortBy]);
+    }, [qrCodes, search, filterType, filterStatus, filterTag, sortBy]);
+
+    // Extract unique tags for filter
+    const allTags = useMemo(() => {
+        if (!qrCodes) return [];
+        const tagSet = new Set<string>();
+        qrCodes.forEach((qr) => qr.tags?.forEach((t) => tagSet.add(t)));
+        return Array.from(tagSet).sort();
+    }, [qrCodes]);
 
     function toggleSelect(id: string) {
         setSelectedIds((prev) => {
@@ -187,14 +207,9 @@ export default function DashboardPage() {
             <div className="dashboard-filter-bar">
                 {/* Search */}
                 <div className="dashboard-filter-search">
-                    <svg
-                        width="15" height="15"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round"
-                        style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--color-text-faint)", pointerEvents: "none" }}
-                    >
-                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
+                    <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "var(--color-text-faint)", pointerEvents: "none", lineHeight: 0 }}>
+                        <SearchIcon size={15} />
+                    </span>
                     <input
                         className="input"
                         placeholder="Zoeken..."
@@ -237,6 +252,19 @@ export default function DashboardPage() {
                         <option value="title">Op naam</option>
                         <option value="type">Op type</option>
                     </select>
+
+                    {allTags.length > 0 && (
+                        <select
+                            className="input dashboard-filter-select"
+                            value={filterTag}
+                            onChange={(e) => setFilterTag(e.target.value)}
+                        >
+                            <option value="all">Alle tags</option>
+                            {allTags.map((t) => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
 
                 {/* New QR button */}
@@ -331,7 +359,7 @@ export default function DashboardPage() {
 
             {/* Loading state */}
             {qrCodes === undefined && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
                     {[1, 2, 3].map((i) => (
                         <div key={i} className="skeleton" style={{ height: "240px", borderRadius: "var(--radius-lg)" }} />
                     ))}
@@ -391,12 +419,14 @@ function QRCodeCard({
     selected: boolean;
     onSelect: () => void;
 }) {
-    const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const redirectUrl = `${siteUrl}/r/${qr.slug}`;
+    const router = useRouter();
+    const redirectUrl = getQRRedirectUrl(qr.slug);
+    const displayUrl = getQRDisplayUrl(qr.slug);
 
     return (
         <div
             className="card"
+            onClick={() => router.push(`/dashboard/qr/${qr._id}`)}
             style={{
                 padding: "1.25rem",
                 display: "flex",
@@ -432,9 +462,7 @@ function QRCodeCard({
                 aria-label={selected ? "Deselecteer" : "Selecteer"}
             >
                 {selected && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                    <CheckIcon size={10} style={{ color: "#fff" }} strokeWidth={3} />
                 )}
             </button>
 
@@ -475,21 +503,67 @@ function QRCodeCard({
                         {qr.title}
                     </h3>
                     <p style={{ fontSize: "0.75rem", color: "var(--color-text-faint)", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        /r/{qr.slug}
+                        {displayUrl}
                     </p>
+                    {qr.tags && qr.tags.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginTop: "0.375rem" }}>
+                            {qr.tags.slice(0, 3).map((tag) => (
+                                <span key={tag} style={{
+                                    fontSize: "0.625rem", fontWeight: 500, padding: "0.125rem 0.5rem",
+                                    borderRadius: "100px", background: "var(--color-accent-bg)",
+                                    color: "var(--color-accent)", border: "1px solid var(--color-accent-border)",
+                                }}>
+                                    {tag}
+                                </span>
+                            ))}
+                            {qr.tags.length > 3 && (
+                                <span style={{ fontSize: "0.625rem", color: "var(--color-text-faint)" }}>
+                                    +{qr.tags.length - 3}
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Footer: scans + date + open */}
+            {/* Footer: scans + actions */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem", color: "var(--color-text-muted)" }}>
                     <BarChartIcon size={13} />
                     <span>{qr.totalScans} scans</span>
                 </div>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.72rem", color: "var(--color-text-faint)" }}>
+                <div style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.72rem", color: "var(--color-text-faint)", marginRight: "0.25rem" }}>
                         {new Date(qr.createdAt).toLocaleDateString("nl-NL")}
                     </span>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(redirectUrl);
+                        }}
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: "0.25rem", minWidth: 0 }}
+                        title="Kopieer link"
+                        aria-label="Kopieer redirect URL"
+                    >
+                        <CopyIcon size={13} />
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (navigator.share) {
+                                navigator.share({ title: qr.title, url: redirectUrl }).catch(() => {});
+                            } else {
+                                navigator.clipboard.writeText(redirectUrl);
+                            }
+                        }}
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: "0.25rem", minWidth: 0 }}
+                        title="Deel QR code"
+                        aria-label="Deel QR code link"
+                    >
+                        <ShareIcon size={13} />
+                    </button>
                     <Link
                         href={`/dashboard/qr/${qr._id}`}
                         className="btn btn-secondary btn-sm"

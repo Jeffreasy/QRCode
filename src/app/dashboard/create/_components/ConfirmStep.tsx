@@ -1,6 +1,7 @@
 "use client";
 
 import { QR_TYPE_META, QRType } from "@/lib/qr-types";
+import { getQRBaseUrl } from "@/lib/qr-url";
 import { QRCustomization } from "../_hooks/useQRCustomization";
 import { DOT_STYLES } from "../_constants";
 
@@ -9,7 +10,6 @@ export function ConfirmStep({
     selectedType,
     computedDestination,
     customization,
-    siteUrl,
     errorMsg,
     hasLowContrast,
 }: {
@@ -17,7 +17,6 @@ export function ConfirmStep({
     selectedType: QRType;
     computedDestination: string;
     customization: QRCustomization;
-    siteUrl: string;
     errorMsg: string;
     hasLowContrast: boolean;
 }) {
@@ -40,7 +39,7 @@ export function ConfirmStep({
                     { label: "Dot stijl", value: DOT_STYLES.find(d => d.value === customization.dotStyle)?.label ?? customization.dotStyle },
                     { label: "Foutcorrectie", value: customization.errorCorrectionLevel },
                     ...(QR_TYPE_META[selectedType].isDynamic
-                        ? [{ label: "Redirect URL", value: `${siteUrl}/r/[slug]` }]
+                        ? [{ label: "Redirect URL", value: `${getQRBaseUrl()}/r/[slug]` }]
                         : []),
                 ].map((item) => (
                     <div key={item.label} style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 1rem", background: "var(--color-bg-2)", borderRadius: "var(--radius-md)", gap: "1rem" }}>

@@ -14,6 +14,7 @@ import {
     ShareIcon,
     MonitorIcon,
     BrowserIcon,
+    DownloadIcon,
 } from "@/components/ui/icons";
 
 const DAY_OPTIONS = [7, 14, 30, 90] as const;
@@ -42,8 +43,8 @@ export default function GlobalAnalyticsPage() {
                     </p>
                 </div>
 
-                {/* Period picker */}
-                <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                {/* Period picker + Export */}
+                <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap", alignItems: "center" }}>
                     {DAY_OPTIONS.map((d) => (
                         <button
                             key={d}
@@ -54,6 +55,40 @@ export default function GlobalAnalyticsPage() {
                             {d}d
                         </button>
                     ))}
+                    {stats && stats.total > 0 && (
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                                const header = "Metric,Categorie,Waarde";
+                                const rows: string[] = [];
+                                const addBreakdown = (metric: string, data: Record<string, number>) => {
+                                    Object.entries(data).forEach(([key, val]) => {
+                                        rows.push([metric, key, String(val)].map(v => `"${v}"`).join(","));
+                                    });
+                                };
+                                addBreakdown("Apparaat", stats.deviceBreakdown);
+                                addBreakdown("Browser", stats.browserBreakdown);
+                                addBreakdown("Land", stats.countryBreakdown);
+                                addBreakdown("Stad", stats.cityBreakdown);
+                                addBreakdown("Regio", stats.regionBreakdown);
+                                addBreakdown("OS", stats.osBreakdown);
+                                addBreakdown("Referrer", stats.referrerBreakdown);
+                                const csv = [header, ...rows].join("\n");
+                                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `analytics_${days}d.csv`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }}
+                            style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginLeft: "0.25rem" }}
+                            title="Exporteer analytics als CSV"
+                        >
+                            <DownloadIcon size={14} />
+                            CSV
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -151,8 +186,10 @@ function SkeletonRow({ count }: { count: number }) {
 }
 
 function BreakdownCard({ icon, title, data }: { icon?: React.ReactNode; title: string; data: Record<string, number> }) {
-    const total = Object.values(data).reduce((s, n) => s + n, 0);
-    const sorted = Object.entries(data).sort(([, a], [, b]) => b - a).slice(0, 5);
+    const unknownCount = data["Unknown"] ?? 0;
+    const filtered = Object.entries(data).filter(([key]) => key !== "Unknown");
+    const knownTotal = filtered.reduce((s, [, n]) => s + n, 0);
+    const sorted = filtered.sort(([, a], [, b]) => b - a).slice(0, 5);
 
     return (
         <div className="card" style={{ padding: "1.25rem" }}>
@@ -169,7 +206,7 @@ function BreakdownCard({ icon, title, data }: { icon?: React.ReactNode; title: s
             ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     {sorted.map(([key, count]) => {
-                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                        const pct = knownTotal > 0 ? Math.round((count / knownTotal) * 100) : 0;
                         return (
                             <div key={key}>
                                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
@@ -190,6 +227,11 @@ function BreakdownCard({ icon, title, data }: { icon?: React.ReactNode; title: s
                             </div>
                         );
                     })}
+                    {unknownCount > 0 && (
+                        <p style={{ fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: "0.25rem", fontStyle: "italic" }}>
+                            + {unknownCount} scan{unknownCount !== 1 ? "s" : ""} zonder {title.toLowerCase()}-data
+                        </p>
+                    )}
                 </div>
             )}
         </div>

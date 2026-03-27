@@ -1,8 +1,10 @@
 "use client";
 
 export function BreakdownCard({ title, data }: { title: string; data: Record<string, number> }) {
-    const total = Object.values(data).reduce((s, n) => s + n, 0);
-    const sorted = Object.entries(data).sort(([, a], [, b]) => b - a).slice(0, 5);
+    const unknownCount = data["Unknown"] ?? 0;
+    const filtered = Object.entries(data).filter(([key]) => key !== "Unknown");
+    const knownTotal = filtered.reduce((s, [, n]) => s + n, 0);
+    const sorted = filtered.sort(([, a], [, b]) => b - a).slice(0, 5);
 
     return (
         <div className="card" style={{ padding: "1.25rem" }}>
@@ -12,7 +14,7 @@ export function BreakdownCard({ title, data }: { title: string; data: Record<str
             ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     {sorted.map(([key, count]) => {
-                        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                        const pct = knownTotal > 0 ? Math.round((count / knownTotal) * 100) : 0;
                         return (
                             <div key={key}>
                                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
@@ -33,8 +35,14 @@ export function BreakdownCard({ title, data }: { title: string; data: Record<str
                             </div>
                         );
                     })}
+                    {unknownCount > 0 && (
+                        <p style={{ fontSize: "0.6875rem", color: "var(--color-text-faint)", marginTop: "0.25rem", fontStyle: "italic" }}>
+                            + {unknownCount} scan{unknownCount !== 1 ? "s" : ""} zonder {title.toLowerCase()}-data
+                        </p>
+                    )}
                 </div>
             )}
         </div>
     );
 }
+

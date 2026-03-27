@@ -2,6 +2,7 @@ import { HomeNav } from "./_components/HomeNav";
 import { HeroSection } from "./_components/HeroSection";
 import { FeaturesSection } from "./_components/FeaturesSection";
 import { TrustSection } from "./_components/TrustSection";
+import { UseCasesSection } from "./_components/UseCasesSection";
 import { PricingSection } from "./_components/PricingSection";
 import { FaqSection } from "./_components/FaqSection";
 import { HomeFooter } from "./_components/HomeFooter";
@@ -19,6 +20,7 @@ export default function HomePage() {
       <HeroSection />
       <FeaturesSection />
       <TrustSection />
+      <UseCasesSection />
       <PricingSection />
       <FaqSection />
       <HomeFooter />

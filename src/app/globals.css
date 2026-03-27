@@ -809,6 +809,164 @@ body {
 }
 
 /* ============================================
+   USE CASES SECTION
+   ============================================ */
+.use-cases-section {
+  padding: 4rem 1.5rem;
+}
+
+/* Tab bar */
+.use-case-tabs {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.use-case-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: "Inter", sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.use-case-tab:hover {
+  background: var(--color-surface);
+  border-color: var(--color-border-active);
+  color: var(--color-text);
+}
+
+.use-case-tab.active {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.use-case-tab-emoji {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Panel */
+.use-case-panel {
+  padding: 2rem;
+}
+
+.use-case-panel-inner {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* Text side */
+.use-case-step {
+  margin-bottom: 1.125rem;
+}
+
+.use-case-step:last-child {
+  margin-bottom: 0;
+}
+
+.use-case-step-label {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.use-case-step p {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Sidebar */
+.use-case-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.use-case-qr-types-box {
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* QR type badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.badge-type {
+  background: var(--color-accent-bg);
+  border: 1px solid var(--color-accent-border);
+  color: var(--color-accent);
+}
+
+/* Responsive — tablet */
+@media (max-width: 768px) {
+  .use-cases-section {
+    padding: 3rem 1.25rem;
+  }
+
+  .use-case-tabs {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+  }
+
+  .use-case-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .use-case-panel-inner {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .use-case-panel {
+    padding: 1.5rem;
+  }
+}
+
+/* Responsive — mobile */
+@media (max-width: 480px) {
+  .use-cases-section {
+    padding: 2.5rem 1rem;
+  }
+
+  .use-case-panel {
+    padding: 1.25rem;
+  }
+}
+
+/* ============================================
    DASHBOARD / CREATE PAGE LAYOUT
    ============================================ */
 
@@ -979,6 +1137,12 @@ body {
   .dashboard-filter-cta {
     width: auto;
   }
+}
+
+/* QR card checkbox hover */
+.qr-checkbox:hover {
+  border-color: var(--color-accent) !important;
+  background: var(--color-accent-bg) !important;
 }
 
 /* ============================================
