@@ -6,10 +6,12 @@ import { UseCasesSection } from "./_components/UseCasesSection";
 import { PricingSection } from "./_components/PricingSection";
 import { FaqSection } from "./_components/FaqSection";
 import { HomeFooter } from "./_components/HomeFooter";
+import { StructuredData } from "./_components/StructuredData";
 
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-grid relative overflow-hidden">
+      <StructuredData />
       {/* Ambient background glows */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div style={{ position: "absolute", top: "10%", left: "20%", width: "600px", height: "600px", background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)", borderRadius: "50%", filter: "blur(40px)" }} />

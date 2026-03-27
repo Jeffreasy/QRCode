@@ -22,7 +22,23 @@ export const metadata: Metadata = {
   },
   description:
     "Maak, beheer en analyseer professionele dynamische QR codes. Wijzig de bestemming op elk moment zonder de QR code opnieuw te printen.",
-  keywords: ["dynamische QR codes", "QR generator", "QR analytics", "dynamic QR"],
+  keywords: [
+    "dynamische QR codes",
+    "QR code generator",
+    "QR code maker",
+    "QR analytics",
+    "QR code met logo",
+    "QR code statistieken",
+    "gratis QR code",
+    "QR code Nederland",
+    "professionele QR codes",
+    "dynamic QR code",
+    "QR code aanpassen",
+    "QR code scannen",
+  ],
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
     title: "QRCodeMaster — Professionele Dynamische QR Codes",
     description: "Maak professionele dynamische QR codes die je altijd kunt aanpassen.",
@@ -30,6 +46,14 @@ export const metadata: Metadata = {
     siteName: "QRCodeMaster",
     locale: "nl_NL",
     type: "website",
+    images: [
+      {
+        url: `${siteUrl}/opengraph-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "QRCodeMaster — Professionele Dynamische QR Codes",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
