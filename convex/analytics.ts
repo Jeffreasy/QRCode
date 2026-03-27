@@ -52,21 +52,39 @@ export const logScan = internalMutation({
     },
 });
 
-// Get aggregate stats for a single QR code
+// Get aggregate stats for a single QR code (period-filtered)
 export const getScanStats = query({
-    args: { qrCodeId: v.id("qr_codes") },
+    args: {
+        qrCodeId: v.id("qr_codes"),
+        days: v.optional(v.number()),
+    },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) return null;
         const qrCode = await ctx.db.get(args.qrCodeId);
         if (!qrCode || qrCode.userId !== identity.subject) return null;
 
-        // Guard: cap at 10k events to prevent OOM on very popular QR codes.
-        // For heavy QR codes, aggregate tables should be used instead.
+        const days = args.days ?? 30;
+        const now = Date.now();
+        const since = now - days * 24 * 60 * 60 * 1000;
+        const previousSince = since - days * 24 * 60 * 60 * 1000;
+
+        // Current period events
         const events = await ctx.db
             .query("scan_events")
-            .withIndex("by_qr_code", (q) => q.eq("qrCodeId", args.qrCodeId))
-            .take(10_000);
+            .withIndex("by_qr_code_time", (q) =>
+                q.eq("qrCodeId", args.qrCodeId).gte("scannedAt", since)
+            )
+            .collect();
+
+        // Previous period for trend comparison
+        const prevEvents = await ctx.db
+            .query("scan_events")
+            .withIndex("by_qr_code_time", (q) =>
+                q.eq("qrCodeId", args.qrCodeId).gte("scannedAt", previousSince)
+            )
+            .collect();
+        const previousTotal = prevEvents.filter((e) => e.scannedAt < since).length;
 
         const deviceCounts: Record<string, number> = {};
         const browserCounts: Record<string, number> = {};
@@ -75,6 +93,8 @@ export const getScanStats = query({
         const regionCounts: Record<string, number> = {};
         const osCounts: Record<string, number> = {};
         const referrerCounts: Record<string, number> = {};
+        const abVariantCounts: Record<string, number> = {};
+        let lastScannedAt: number | null = null;
 
         for (const e of events) {
             const dev = e.device ?? "Unknown";
@@ -91,10 +111,18 @@ export const getScanStats = query({
             regionCounts[re] = (regionCounts[re] ?? 0) + 1;
             osCounts[os] = (osCounts[os] ?? 0) + 1;
             referrerCounts[ref] = (referrerCounts[ref] ?? 0) + 1;
+            if (e.abVariant) {
+                abVariantCounts[e.abVariant] = (abVariantCounts[e.abVariant] ?? 0) + 1;
+            }
+            if (!lastScannedAt || e.scannedAt > lastScannedAt) {
+                lastScannedAt = e.scannedAt;
+            }
         }
 
         return {
             total: events.length,
+            previousTotal,
+            lastScannedAt,
             deviceBreakdown: deviceCounts,
             browserBreakdown: browserCounts,
             countryBreakdown: countryCounts,
@@ -102,6 +130,7 @@ export const getScanStats = query({
             regionBreakdown: regionCounts,
             osBreakdown: osCounts,
             referrerBreakdown: referrerCounts,
+            abVariantBreakdown: abVariantCounts,
         };
     },
 });

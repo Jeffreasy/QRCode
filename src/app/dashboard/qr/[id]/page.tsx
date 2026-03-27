@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
@@ -14,7 +15,7 @@ import {
     BarChartIcon, SmartphoneIcon, GlobeIcon, LinkIcon,
     TrashIcon, CheckIcon, BanIcon, ZapIcon, ArrowUpRightIcon,
     ChevronRightIcon, EditIcon, XIcon, CopyIcon, BrowserIcon,
-    ShareIcon,
+    ShareIcon, MonitorIcon, MapPinIcon, DownloadIcon, ClockIcon,
 } from "@/components/ui/icons";
 import { useDesignDraft } from "./_hooks/useDesignDraft";
 import { useQRDetailActions } from "./_hooks/useQRDetailActions";
@@ -23,20 +24,79 @@ import { BreakdownCard } from "./_components/BreakdownCard";
 import { RecentScansFeed } from "./_components/RecentScansFeed";
 import { ScheduleCard, PasswordCard, TagsCard, ABTestCard, GeoRulesCard } from "./_components/PremiumFeatures";
 
+const DAY_OPTIONS = [7, 14, 30, 90] as const;
+
 export default function QRDetailPage() {
     const params = useParams();
     const qrId = params.id as Id<"qr_codes">;
+    const [days, setDays] = useState<typeof DAY_OPTIONS[number]>(30);
 
     // ── Queries ──────────────────────────────────────────────────────────────
     const qrCode = useQuery(api.qrCodes.getById, { id: qrId });
-    const scanStats = useQuery(api.analytics.getScanStats, { qrCodeId: qrId });
-    const scansByDay = useQuery(api.analytics.getScansByDay, { qrCodeId: qrId, days: 30 });
+    const scanStats = useQuery(api.analytics.getScanStats, { qrCodeId: qrId, days });
+    const scansByDay = useQuery(api.analytics.getScansByDay, { qrCodeId: qrId, days });
+    const scansByHour = useQuery(api.analytics.getScansByHour, { qrCodeId: qrId, days });
     const recentScans = useQuery(api.analytics.getRecentScans, { qrCodeId: qrId, limit: 10 });
 
     // ── Hooks ─────────────────────────────────────────────────────────────────
     const design = useDesignDraft(qrId);
     const actions = useQRDetailActions(qrId, recentScans, qrCode ?? null);
 
+    // Convert hourly data for ScanChart
+    const hourData = scansByHour?.map((h) => ({
+        hour: String(h.hour),
+        count: h.count,
+    }));
+
+    // Trend calculation (#7)
+    const trend = useMemo(() => {
+        if (!scanStats || scanStats.previousTotal === undefined) return null;
+        if (scanStats.previousTotal === 0) return scanStats.total > 0 ? 100 : 0;
+        return Math.round(((scanStats.total - scanStats.previousTotal) / scanStats.previousTotal) * 100);
+    }, [scanStats]);
+
+    // "Laatst gescand" (#14)
+    const lastScannedLabel = useMemo(() => {
+        if (!scanStats?.lastScannedAt) return null;
+        const diff = Date.now() - scanStats.lastScannedAt;
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return "Zojuist";
+        if (mins < 60) return `${mins} min geleden`;
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return `${hours} uur geleden`;
+        const daysAgo = Math.floor(hours / 24);
+        return `${daysAgo} dag${daysAgo !== 1 ? "en" : ""} geleden`;
+    }, [scanStats?.lastScannedAt]);
+
+    // Full analytics CSV export (#12)
+    function exportFullCSV() {
+        if (!scanStats) return;
+        const header = "Metric,Categorie,Waarde";
+        const rows: string[] = [];
+        const addBreakdown = (metric: string, data: Record<string, number>) => {
+            Object.entries(data).forEach(([key, val]) => {
+                rows.push([metric, key, String(val)].map(v => `"${v}"`).join(","));
+            });
+        };
+        addBreakdown("Apparaat", scanStats.deviceBreakdown);
+        addBreakdown("Browser", scanStats.browserBreakdown);
+        addBreakdown("Land", scanStats.countryBreakdown);
+        addBreakdown("Stad", scanStats.cityBreakdown);
+        addBreakdown("Regio", scanStats.regionBreakdown);
+        addBreakdown("OS", scanStats.osBreakdown);
+        addBreakdown("Referrer", scanStats.referrerBreakdown);
+        if (Object.keys(scanStats.abVariantBreakdown).length > 0) {
+            addBreakdown("A/B Variant", scanStats.abVariantBreakdown);
+        }
+        const csv = [header, ...rows].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `analytics_${qrCode?.slug ?? "qr"}_${days}d.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
 
     // ── Loading / not found states ────────────────────────────────────────────
     if (qrCode === undefined) {
@@ -88,9 +148,10 @@ export default function QRDetailPage() {
     };
 
     const DETAIL_STATS = [
-        { label: "Totale scans", value: qrCode.totalScans, Icon: BarChartIcon },
-        { label: "Unieke apparaten", value: scanStats ? Object.keys(scanStats.deviceBreakdown).length : "-", Icon: SmartphoneIcon },
-        { label: "Landen bereikt", value: scanStats ? Object.keys(scanStats.countryBreakdown).filter(c => c !== "Unknown").length : "-", Icon: GlobeIcon },
+        { label: "Scans", value: scanStats?.total ?? "—", Icon: BarChartIcon, showTrend: true },
+        { label: "Apparaten", value: scanStats ? Object.keys(scanStats.deviceBreakdown).filter(c => c !== "Unknown").length : "—", Icon: SmartphoneIcon, showTrend: false },
+        { label: "Landen", value: scanStats ? Object.keys(scanStats.countryBreakdown).filter(c => c !== "Unknown").length : "—", Icon: GlobeIcon, showTrend: false },
+        { label: "Steden", value: scanStats ? Object.keys(scanStats.cityBreakdown).filter(c => c !== "Unknown").length : "—", Icon: MapPinIcon, showTrend: false },
     ];
 
     return (
@@ -144,7 +205,18 @@ export default function QRDetailPage() {
                             {qrCode.isActive ? "Actief" : "Inactief"}
                         </span>
                     </div>
-                    <p style={{ color: "var(--color-text-faint)", fontFamily: "monospace", fontSize: "0.875rem" }}>{displayUrl}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                        <p style={{ color: "var(--color-text-faint)", fontFamily: "monospace", fontSize: "0.875rem" }}>{displayUrl}</p>
+                        {/* Laatst gescand (#14) */}
+                        {lastScannedLabel && (
+                            <span style={{
+                                fontSize: "0.6875rem", color: "var(--color-text-faint)", display: "flex", alignItems: "center", gap: "0.25rem",
+                                padding: "0.125rem 0.5rem", borderRadius: "100px", background: "var(--color-bg-2)",
+                            }}>
+                                <ClockIcon size={11} /> Laatste scan: {lastScannedLabel}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Action buttons */}
@@ -192,85 +264,158 @@ export default function QRDetailPage() {
             </div>
 
             <div className="qr-detail-grid">
-                {/* Left column */}
+                {/* ═══════════════════ LEFT COLUMN ═══════════════════ */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
-                    {/* Stats */}
-                    <div className="dashboard-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
-                        {DETAIL_STATS.map(({ label, value, Icon }) => (
+                    {/* ─── SECTION 1: ANALYTICS ─── */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                        <h2 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
+                            <BarChartIcon size={16} style={{ color: "var(--color-accent)" }} />
+                            Analytics
+                        </h2>
+                        <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
+                            {DAY_OPTIONS.map((d) => (
+                                <button
+                                    key={d}
+                                    onClick={() => setDays(d)}
+                                    className={`btn btn-sm ${days === d ? "btn-primary" : "btn-secondary"}`}
+                                    style={{ minWidth: "40px" }}
+                                >
+                                    {d}d
+                                </button>
+                            ))}
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={exportFullCSV}
+                                disabled={!scanStats || scanStats.total === 0}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: "0.375rem",
+                                    opacity: !scanStats || scanStats.total === 0 ? 0.4 : 1,
+                                    marginLeft: "0.25rem",
+                                }}
+                                title={scanStats?.total === 0 ? "Geen data" : "Exporteer als CSV"}
+                            >
+                                <DownloadIcon size={14} />
+                                CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* KPI Stats with trend */}
+                    <div className="dashboard-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+                        {DETAIL_STATS.map(({ label, value, Icon, showTrend }) => (
                             <div key={label} className="card" style={{ padding: "1.25rem", textAlign: "center" }}>
                                 <div style={{ width: "40px", height: "40px", borderRadius: "var(--radius-md)", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 0.75rem", color: "var(--color-accent)" }}>
                                     <Icon size={18} />
                                 </div>
-                                <div style={{ fontSize: "1.75rem", fontWeight: 800, background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{value}</div>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
+                                    <div style={{ fontSize: "1.75rem", fontWeight: 800, background: "var(--gradient-brand)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{value}</div>
+                                    {showTrend && trend !== null && trend !== 0 && (
+                                        <span style={{
+                                            fontSize: "0.625rem", fontWeight: 600, padding: "0.125rem 0.375rem", borderRadius: "100px",
+                                            background: trend > 0 ? "rgba(52,211,153,0.1)" : "rgba(239,68,68,0.1)",
+                                            color: trend > 0 ? "#34d399" : "#ef4444",
+                                            border: `1px solid ${trend > 0 ? "rgba(52,211,153,0.2)" : "rgba(239,68,68,0.2)"}`,
+                                        }}>
+                                            {trend > 0 ? "↑" : "↓"}{Math.abs(trend)}%
+                                        </span>
+                                    )}
+                                </div>
                                 <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{label}</div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Scan chart */}
-                    {scansByDay && <ScanChart data={scansByDay} />}
+                    {/* Scan chart with hour toggle (#2) */}
+                    {scansByDay && <ScanChart data={scansByDay} hourData={hourData} />}
 
-                    {/* Device / Country breakdown */}
+                    {/* All 7 breakdowns (#3) — Row 1: Device + Country + Browser */}
                     {scanStats && (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                            <BreakdownCard title="Apparaten" data={scanStats.deviceBreakdown} />
-                            <BreakdownCard title="Top landen" data={scanStats.countryBreakdown} />
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "1rem" }}>
+                            <BreakdownCard icon={<SmartphoneIcon size={14} />} title="Apparaat" data={scanStats.deviceBreakdown} colorKey="device" />
+                            <BreakdownCard icon={<GlobeIcon size={14} />} title="Land" data={scanStats.countryBreakdown} colorKey="country" />
+                            <BreakdownCard icon={<BrowserIcon size={14} />} title="Browser" data={scanStats.browserBreakdown} colorKey="browser" />
                         </div>
                     )}
 
-                    {/* Destination editor */}
-                    <div className="card" style={{ padding: "1.5rem" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                            <h3 style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                <LinkIcon size={16} style={{ color: "var(--color-text-muted)" }} /> Bestemming
-                            </h3>
-                            {!actions.editingDest && (
-                                <button className="btn btn-secondary btn-sm"
-                                    onClick={() => { actions.setNewDest(qrCode.destination); actions.setEditingDest(true); }}
-                                    style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                                    <EditIcon size={13} /> Wijzigen
-                                </button>
+                    {/* Row 2: City + Region + OS + Referrer */}
+                    {scanStats && (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "1rem" }}>
+                            <BreakdownCard icon={<MapPinIcon size={14} />} title="Stad" data={scanStats.cityBreakdown} colorKey="city" />
+                            <BreakdownCard icon={<ZapIcon size={14} />} title="Regio" data={scanStats.regionBreakdown} colorKey="region" />
+                            <BreakdownCard icon={<MonitorIcon size={14} />} title="OS" data={scanStats.osBreakdown} colorKey="os" />
+                            <BreakdownCard icon={<ShareIcon size={14} />} title="Referrer" data={scanStats.referrerBreakdown} colorKey="referrer" />
+                        </div>
+                    )}
+
+                    {/* A/B Variant breakdown if applicable */}
+                    {scanStats && Object.keys(scanStats.abVariantBreakdown).length > 0 && (
+                        <BreakdownCard icon={<ZapIcon size={14} />} title="A/B Variant" data={scanStats.abVariantBreakdown} colorKey="abVariant" />
+                    )}
+
+                    {/* Recent scans feed */}
+                    <RecentScansFeed recentScans={recentScans} onExportCSV={actions.handleExportCSV} />
+
+                    {/* ─── SECTION 2: MANAGEMENT ─── */}
+                    <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "1.5rem", marginTop: "0.5rem" }}>
+                        <h2 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.5rem" }}>
+                            <LinkIcon size={16} style={{ color: "var(--color-accent)" }} />
+                            Beheer
+                        </h2>
+
+                        {/* Destination editor */}
+                        <div className="card" style={{ padding: "1.5rem", marginBottom: "1rem" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                                <h3 style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                    <LinkIcon size={16} style={{ color: "var(--color-text-muted)" }} /> Bestemming
+                                </h3>
+                                {!actions.editingDest && (
+                                    <button className="btn btn-secondary btn-sm"
+                                        onClick={() => { actions.setNewDest(qrCode.destination); actions.setEditingDest(true); }}
+                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                        <EditIcon size={13} /> Wijzigen
+                                    </button>
+                                )}
+                            </div>
+
+                            {actions.editingDest ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                    <input className="input" value={actions.newDest}
+                                        onChange={(e) => actions.setNewDest(e.target.value)}
+                                        placeholder="Nieuwe bestemming..." autoFocus />
+                                    <div style={{ display: "flex", gap: "0.75rem" }}>
+                                        <button className="btn btn-primary btn-sm" onClick={actions.handleSaveDest} disabled={actions.isSaving}
+                                            style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                            <CheckIcon size={14} /> {actions.isSaving ? "Opslaan..." : "Opslaan"}
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => actions.setEditingDest(false)}
+                                            style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                            <XIcon size={14} /> Annuleren
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: "0.75rem", color: "var(--color-accent)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                                        <ZapIcon size={12} /> De QR code zelf verandert niet — alleen de bestemming.
+                                    </p>
+                                </div>
+                            ) : (
+                                <p style={{ fontFamily: "monospace", fontSize: "0.875rem", color: "var(--color-text-muted)", wordBreak: "break-all" }}>
+                                    {qrCode.destination}
+                                </p>
                             )}
                         </div>
 
-                        {actions.editingDest ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                                <input className="input" value={actions.newDest}
-                                    onChange={(e) => actions.setNewDest(e.target.value)}
-                                    placeholder="Nieuwe bestemming..." autoFocus />
-                                <div style={{ display: "flex", gap: "0.75rem" }}>
-                                    <button className="btn btn-primary btn-sm" onClick={actions.handleSaveDest} disabled={actions.isSaving}
-                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                                        <CheckIcon size={14} /> {actions.isSaving ? "Opslaan..." : "Opslaan"}
-                                    </button>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => actions.setEditingDest(false)}
-                                        style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                                        <XIcon size={14} /> Annuleren
-                                    </button>
-                                </div>
-                                <p style={{ fontSize: "0.75rem", color: "var(--color-accent)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                                    <ZapIcon size={12} /> De QR code zelf verandert niet — alleen de bestemming.
-                                </p>
-                            </div>
-                        ) : (
-                            <p style={{ fontFamily: "monospace", fontSize: "0.875rem", color: "var(--color-text-muted)", wordBreak: "break-all" }}>
-                                {qrCode.destination}
-                            </p>
-                        )}
+                        {/* Premium features */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                            <ScheduleCard qr={qrCode} />
+                            <PasswordCard qr={qrCode} />
+                        </div>
+                        <TagsCard qr={qrCode} />
+                        <div style={{ marginTop: "1rem" }}><ABTestCard qr={qrCode} /></div>
+                        <div style={{ marginTop: "1rem" }}><GeoRulesCard qr={qrCode} /></div>
                     </div>
-
-                    {/* Premium features */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                        <ScheduleCard qr={qrCode} />
-                        <PasswordCard qr={qrCode} />
-                    </div>
-                    <TagsCard qr={qrCode} />
-                    <ABTestCard qr={qrCode} />
-                    <GeoRulesCard qr={qrCode} />
                 </div>
 
-                {/* Right column */}
+                {/* ═══════════════════ RIGHT COLUMN (sidebar) ═══════════════════ */}
                 <div className="qr-detail-right" style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "sticky", top: "2rem" }}>
 
                     {/* QR Preview card */}
@@ -356,22 +501,6 @@ export default function QRDetailPage() {
                         logoHideDots={activeCustom.logoHideDots}
                     />
                 </div>
-            </div>
-
-            {/* Bottom: browser breakdown + recent scans */}
-            <div style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: "1.5rem" }}>
-                {scanStats && (
-                    <div className="card" style={{ padding: "1.25rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-                            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "var(--color-accent-bg)", border: "1px solid var(--color-accent-border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-accent)" }}>
-                                <BrowserIcon size={14} />
-                            </div>
-                            <h4 style={{ fontWeight: 700, fontSize: "0.9rem", margin: 0 }}>Browser verdeling</h4>
-                        </div>
-                        <BreakdownCard title="" data={scanStats.browserBreakdown} />
-                    </div>
-                )}
-                <RecentScansFeed recentScans={recentScans} onExportCSV={actions.handleExportCSV} />
             </div>
         </div>
     );

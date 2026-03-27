@@ -10,6 +10,7 @@ type Scan = {
     device?: string;
     browser?: string;
     os?: string;
+    abVariant?: string;
 };
 
 export function RecentScansFeed({
@@ -69,8 +70,17 @@ export function RecentScansFeed({
                                 <div style={{ fontWeight: 500, color: "var(--color-text)" }}>
                                     {scan.country ?? "Onbekend land"}{scan.city ? ` · ${scan.city}` : ""}
                                 </div>
-                                <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)" }}>
+                                <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)", display: "flex", alignItems: "center", gap: "0.375rem" }}>
                                     {scan.device ?? "?"} · {scan.browser ?? "?"} · {scan.os ?? "?"}
+                                    {scan.abVariant && (
+                                        <span style={{
+                                            fontSize: "0.625rem", padding: "0.0625rem 0.375rem", borderRadius: "100px",
+                                            background: "rgba(34,211,238,0.1)", color: "#22d3ee",
+                                            border: "1px solid rgba(34,211,238,0.2)", fontWeight: 500,
+                                        }}>
+                                            {scan.abVariant}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)", flexShrink: 0, whiteSpace: "nowrap" }}>
