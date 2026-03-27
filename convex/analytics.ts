@@ -203,15 +203,28 @@ export const getGlobalScanStats = query({
         if (!identity) return null;
 
         const days = args.days ?? 30;
-        const since = Date.now() - days * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const since = now - days * 24 * 60 * 60 * 1000;
+        const previousSince = since - days * 24 * 60 * 60 * 1000;
 
-        // Use compound index by_user_time for efficient time-range filtering
+        // Current period events
         const events = await ctx.db
             .query("scan_events")
             .withIndex("by_user_time", (q) =>
                 q.eq("userId", identity.subject).gte("scannedAt", since)
             )
             .collect();
+
+        // Previous period events (for trend comparison)
+        const prevEvents = await ctx.db
+            .query("scan_events")
+            .withIndex("by_user_time", (q) =>
+                q.eq("userId", identity.subject)
+                    .gte("scannedAt", previousSince)
+            )
+            .collect();
+        // Filter prev to only include events BEFORE current period
+        const previousTotal = prevEvents.filter((e) => e.scannedAt < since).length;
 
         const deviceCounts: Record<string, number> = {};
         const browserCounts: Record<string, number> = {};
@@ -220,11 +233,13 @@ export const getGlobalScanStats = query({
         const regionCounts: Record<string, number> = {};
         const osCounts: Record<string, number> = {};
         const referrerCounts: Record<string, number> = {};
+        const qrCounts: Record<string, number> = {};
+        const abVariantCounts: Record<string, number> = {};
         const byDay: Record<string, number> = {};
         const byHour: number[] = Array(24).fill(0);
 
         for (let i = 0; i < days; i++) {
-            const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+            const d = new Date(now - i * 24 * 60 * 60 * 1000);
             byDay[d.toISOString().split("T")[0]] = 0;
         }
 
@@ -244,6 +259,15 @@ export const getGlobalScanStats = query({
             osCounts[os] = (osCounts[os] ?? 0) + 1;
             referrerCounts[ref] = (referrerCounts[ref] ?? 0) + 1;
 
+            // Per-QR breakdown
+            const qrId = e.qrCodeId as string;
+            qrCounts[qrId] = (qrCounts[qrId] ?? 0) + 1;
+
+            // A/B variant breakdown
+            if (e.abVariant) {
+                abVariantCounts[e.abVariant] = (abVariantCounts[e.abVariant] ?? 0) + 1;
+            }
+
             const key = new Date(e.scannedAt).toISOString().split("T")[0];
             if (byDay[key] !== undefined) byDay[key] += 1;
 
@@ -252,6 +276,7 @@ export const getGlobalScanStats = query({
 
         return {
             total: events.length,
+            previousTotal,
             scansByDay: Object.entries(byDay)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([date, count]) => ({ date, count })),
@@ -263,6 +288,52 @@ export const getGlobalScanStats = query({
             regionBreakdown: regionCounts,
             osBreakdown: osCounts,
             referrerBreakdown: referrerCounts,
+            qrBreakdown: qrCounts,
+            abVariantBreakdown: abVariantCounts,
         };
     },
 });
+
+// Get recent scans across ALL QR codes (global feed)
+export const getGlobalRecentScans = query({
+    args: { limit: v.optional(v.number()) },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return [];
+
+        const limit = args.limit ?? 15;
+
+        // Get all user's QR codes first
+        const qrCodes = await ctx.db
+            .query("qr_codes")
+            .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+            .collect();
+
+        if (qrCodes.length === 0) return [];
+
+        const qrMap = new Map(qrCodes.map((qr) => [qr._id, qr.title]));
+
+        // Get recent events using user time index
+        const events = await ctx.db
+            .query("scan_events")
+            .withIndex("by_user_time", (q) =>
+                q.eq("userId", identity.subject)
+            )
+            .order("desc")
+            .take(limit);
+
+        return events.map((e) => ({
+            _id: e._id,
+            scannedAt: e.scannedAt,
+            qrCodeId: e.qrCodeId,
+            qrTitle: qrMap.get(e.qrCodeId) ?? "Onbekend",
+            country: e.country,
+            city: e.city,
+            device: e.device,
+            browser: e.browser,
+            abVariant: e.abVariant,
+        }));
+    },
+});
+
+
