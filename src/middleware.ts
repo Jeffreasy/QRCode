@@ -7,6 +7,9 @@ const isPublicRoute = createRouteMatcher([
     "/sign-up(.*)",
     "/r/(.*)",        // QR redirect routes — handled by /app/r/[slug]/route.ts
     "/not-found",
+    "/sitemap.xml",   // SEO: must be public for Google crawlers
+    "/robots.txt",    // SEO: must be public for Google crawlers
+    "/opengraph-image(.*)",  // OG image for social sharing
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
