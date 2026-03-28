@@ -19,6 +19,7 @@ import {
     SearchIcon,
     CopyIcon,
     ShareIcon,
+    TagIcon,
 } from "@/components/ui/icons";
 
 const QR_TYPES = ["url", "vcard", "wifi", "text", "email", "sms", "file", "social", "whatsapp", "event"] as const;
@@ -259,7 +260,7 @@ export default function DashboardPage() {
                             value={filterTag}
                             onChange={(e) => setFilterTag(e.target.value)}
                         >
-                            <option value="all">Alle tags</option>
+                            <option value="all">Alle labels</option>
                             {allTags.map((t) => (
                                 <option key={t} value={t}>{t}</option>
                             ))}
@@ -277,6 +278,47 @@ export default function DashboardPage() {
                     Nieuwe QR code
                 </Link>
             </div>
+
+            {/* Label filter chips — visible when tags exist */}
+            {allTags.length > 0 && (
+                <div style={{
+                    display: "flex", alignItems: "center", gap: "0.5rem",
+                    marginBottom: "1.25rem", flexWrap: "wrap",
+                }}>
+                    <TagIcon size={14} style={{ color: "var(--color-text-faint)", flexShrink: 0 }} />
+                    <button
+                        onClick={() => setFilterTag("all")}
+                        className={`btn btn-sm ${filterTag === "all" ? "btn-primary" : "btn-ghost"}`}
+                        style={{
+                            fontSize: "0.75rem", padding: "0.25rem 0.75rem",
+                            borderRadius: "100px",
+                        }}
+                    >
+                        Alles
+                    </button>
+                    {allTags.map((tag) => (
+                        <button
+                            key={tag}
+                            onClick={() => setFilterTag(filterTag === tag ? "all" : tag)}
+                            className="btn btn-sm"
+                            style={{
+                                fontSize: "0.75rem", padding: "0.25rem 0.75rem",
+                                borderRadius: "100px",
+                                background: filterTag === tag ? "var(--color-accent-bg)" : "transparent",
+                                color: filterTag === tag ? "var(--color-accent)" : "var(--color-text-muted)",
+                                border: filterTag === tag
+                                    ? "1px solid var(--color-accent-border)"
+                                    : "1px solid var(--color-border)",
+                                fontWeight: filterTag === tag ? 600 : 400,
+                                transition: "all 0.15s ease",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {tag}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Bulk action bar */}
             {selectedIds.size > 0 && (

@@ -192,8 +192,17 @@ export function TagsCard({ qr }: { qr: QRCode }) {
 
     const tags = qr.tags ?? [];
 
-    async function addTag() {
-        const tag = newTag.trim().toLowerCase();
+    const TAG_SUGGESTIONS = [
+        "Flyer", "Website", "Evenement", "Visitekaartje", "Social media",
+        "Poster", "Verpakking", "Menu", "Catalogus", "E-mail",
+    ];
+
+    const unusedSuggestions = TAG_SUGGESTIONS.filter(
+        (s) => !tags.includes(s.toLowerCase())
+    );
+
+    async function addTag(tagValue?: string) {
+        const tag = (tagValue ?? newTag).trim().toLowerCase();
         if (!tag || tags.includes(tag)) { setNewTag(""); return; }
         setSaving(true);
         try {
@@ -212,7 +221,7 @@ export function TagsCard({ qr }: { qr: QRCode }) {
     return (
         <div className="card" style={{ padding: "1.25rem" }}>
             <h4 style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", margin: 0, marginBottom: "1rem" }}>
-                <TagIcon size={16} style={{ color: "var(--color-accent)" }} /> Tags
+                <TagIcon size={16} style={{ color: "var(--color-accent)" }} /> Labels
             </h4>
 
             {tags.length > 0 && (
@@ -234,14 +243,51 @@ export function TagsCard({ qr }: { qr: QRCode }) {
                 </div>
             )}
 
-            <form onSubmit={(e) => { e.preventDefault(); addTag(); }} style={{ display: "flex", gap: "0.5rem" }}>
+            <form onSubmit={(e) => { e.preventDefault(); addTag(); }} style={{ display: "flex", gap: "0.5rem", marginBottom: unusedSuggestions.length > 0 ? "0.75rem" : 0 }}>
                 <input className="input" value={newTag} onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Nieuwe tag..." style={{ flex: 1, fontSize: "0.8125rem" }} />
+                    placeholder="Type een label..." style={{ flex: 1, fontSize: "0.8125rem" }} />
                 <button type="submit" className="btn btn-secondary btn-sm" disabled={saving || !newTag.trim()}
                     style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
                     <PlusIcon size={13} /> Toevoegen
                 </button>
             </form>
+
+            {/* Suggested tags */}
+            {unusedSuggestions.length > 0 && (
+                <div>
+                    <div style={{ fontSize: "0.6875rem", color: "var(--color-text-faint)", marginBottom: "0.375rem", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+                        Suggesties
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+                        {unusedSuggestions.map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => addTag(s)}
+                                disabled={saving}
+                                className="btn btn-ghost"
+                                style={{
+                                    fontSize: "0.6875rem", padding: "0.1875rem 0.5rem",
+                                    borderRadius: "100px", border: "1px dashed var(--color-border)",
+                                    color: "var(--color-text-muted)", cursor: "pointer",
+                                    transition: "all 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = "var(--color-accent-border)";
+                                    e.currentTarget.style.color = "var(--color-accent)";
+                                    e.currentTarget.style.background = "var(--color-accent-bg)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = "var(--color-border)";
+                                    e.currentTarget.style.color = "var(--color-text-muted)";
+                                    e.currentTarget.style.background = "transparent";
+                                }}
+                            >
+                                + {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
